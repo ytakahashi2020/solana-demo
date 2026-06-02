@@ -93,6 +93,8 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border-radius:10px;bo
 footer{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 30%);padding:14px 20px 22px;display:flex;align-items:center;gap:12px}
 .count{font-size:13px;color:var(--text3);font-family:"DM Mono",monospace}
 .note{font-size:12px;color:var(--text3);margin-top:8px}
+.beta-banner{margin:0 20px;padding:9px 13px;border-radius:11px;background:var(--amber-bg);border:.5px solid rgba(245,185,66,.32);color:var(--amber);font-size:12px;line-height:1.55;text-align:center}
+.beta-banner b{font-weight:700}
 .profile{margin-top:28px;padding-top:20px;border-top:.5px solid var(--line);text-align:center}
 .profile-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
 .profile-role{font-size:12.5px;line-height:1.6;color:var(--text2)}
@@ -110,6 +112,8 @@ footer{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,va
   </div>
   <div class="dots" id="dots"></div>
 </header>
+
+<div class="beta-banner" data-i18n-html="beta_notice"></div>
 
 <div class="stage">
 
@@ -638,6 +642,7 @@ const I18N = {
   en: {
     brand: 'Solana, <b>Hands-On</b>',
     langBtn: '日本語',
+    beta_notice: '<b>Beta</b> — This demo is a work in progress and has <b>not yet been fact-checked</b>. Some explanations may be inaccurate.',
     nav_prev: '◀ Back',
     nav_next: 'Next ▶',
     nav_start: 'Start ▶',
@@ -959,6 +964,7 @@ const I18N = {
   ja: {
     brand: 'Solana を、<b>触って理解する</b>',
     langBtn: 'English',
+    beta_notice: '<b>ベータ版</b> — このデモは作成途中で、<b>ファクトチェックが未完了</b>です。一部の説明に誤りが含まれる可能性があります。',
     nav_prev: '◀ 前へ',
     nav_next: '次へ ▶',
     nav_start: 'はじめる ▶',
