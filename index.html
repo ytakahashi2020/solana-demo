@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="An interactive, hands-on introduction to Solana. / Solanaを触って理解する入門デモ。">
+<title>Solana, Hands-On — An Interactive Introduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e17; --bg2:#121826; --bg3:#1a2234;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --text:#e8ebf2; --text2:#9aa6bd; --text3:#697489;
+  --teal:#2dd4a7; --teal-dim:#1d9e75; --teal-bg:rgba(45,212,167,.12);
+  --amber:#f5b942; --amber-bg:rgba(245,185,66,.16);
+  --purple:#8b83f0; --purple-bg:rgba(139,131,240,.14);
+  --green:#4ade80; --green-bg:rgba(74,222,128,.16);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:"Zen Kaku Gothic New",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background-image:radial-gradient(circle at 50% -10%,rgba(45,212,167,.07),transparent 55%)}
+.app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.mono{font-family:"DM Mono",monospace}
+
+header{padding:18px 20px 10px;display:flex;flex-direction:column;gap:12px}
+.brand{font-size:13px;letter-spacing:.04em;color:var(--text2)}
+.brand b{color:var(--teal);font-weight:500}
+.dots{display:flex;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:.25s}
+.dot.on{background:var(--teal);width:20px;border-radius:4px}
+
+.stage{flex:1;position:relative}
+.scene{display:none;padding:8px 20px 24px;animation:fade .4s ease}
+.scene.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.tag{display:inline-block;font-size:12px;color:var(--teal);letter-spacing:.06em;margin-bottom:8px}
+h1{font-size:26px;font-weight:700;line-height:1.3;margin-bottom:14px}
+h2{font-size:21px;font-weight:700;line-height:1.35;margin-bottom:10px}
+p{font-size:15px;line-height:1.75;color:var(--text2);margin-bottom:14px}
+p b{color:var(--text);font-weight:500}
+.hint{font-size:14px;line-height:1.7;color:var(--text2);min-height:48px}
+
+.card{background:var(--bg2);border:.5px solid var(--line);border-radius:var(--radius);padding:18px}
+.svgwrap{background:var(--bg2);border:.5px solid var(--line);border-radius:var(--radius);padding:8px 6px;margin-bottom:16px}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:"Zen Kaku Gothic New",sans-serif}
+
+.btn{font-family:inherit;font-size:15px;padding:11px 18px;border-radius:11px;border:.5px solid var(--line2);background:var(--bg3);color:var(--text);cursor:pointer;transition:.15s;font-weight:500}
+.btn:hover{border-color:var(--teal);color:var(--teal)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:default;transform:none;border-color:var(--line2);color:var(--text)}
+.btn.primary{background:var(--teal);color:#06241b;border-color:var(--teal)}
+.btn.primary:hover{color:#06241b;opacity:.9}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.spacer{margin-left:auto}
+
+.slider{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--bg3);outline:none}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal);cursor:pointer;border:3px solid var(--bg)}
+.slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--teal);cursor:pointer;border:3px solid var(--bg)}
+select{font-family:inherit;font-size:15px;padding:9px 12px;border-radius:10px;border:.5px solid var(--line2);background:var(--bg3);color:var(--text)}
+
+.bars{display:flex;flex-direction:column;gap:9px}
+.barrow{display:flex;align-items:center;gap:10px}
+.barrow .lab{width:18px;font-size:14px}
+.track{height:15px;border-radius:8px;background:var(--bg3);flex:1;overflow:hidden}
+.fill{height:100%;border-radius:8px;width:0;transition:width .4s ease}
+.barrow .num{width:40px;text-align:right;font-size:13px;color:var(--text2)}
+
+.field{display:flex;justify-content:space-between;padding:9px 0;border-top:.5px solid var(--line);font-size:15px}
+.field:first-of-type{border-top:none}
+.field .k{color:var(--text2)}
+.badge{font-size:12px;padding:4px 11px;border-radius:12px;background:var(--bg3);color:var(--text2)}
+.badge.act{background:var(--teal-bg);color:var(--teal)}
+.pills{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.pill{font-size:12px;padding:5px 10px;border-radius:13px;border:.5px solid var(--line);color:var(--text2);white-space:nowrap;transition:.2s}
+.pill.on{background:var(--amber-bg);color:var(--amber);border-color:transparent}
+.arrowtiny{color:var(--text3);font-size:12px}
+
+.metric{display:flex;align-items:baseline;gap:10px;margin:6px 0 2px}
+.metric .big{font-size:30px;font-weight:700;font-family:"DM Mono",monospace}
+.metric .sub{font-size:13px;color:var(--text2)}
+.callout{font-size:13px;line-height:1.6;padding:11px 13px;border-radius:11px;margin-top:14px}
+.callout.warn{background:var(--amber-bg);color:var(--amber)}
+.callout.ok{background:var(--teal-bg);color:var(--teal)}
+.sumlist{list-style:none;display:flex;flex-direction:column;gap:12px;margin:6px 0 4px}
+.sumlist li{display:flex;gap:12px;font-size:15px;line-height:1.6}
+.sumlist .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--teal-bg);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;font-family:"DM Mono",monospace}
+
+footer{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 30%);padding:14px 20px 22px;display:flex;align-items:center;gap:12px}
+.count{font-size:13px;color:var(--text3);font-family:"DM Mono",monospace}
+.note{font-size:12px;color:var(--text3);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div class="brand" id="brand"></div>
+    <button id="langToggle" onclick="toggleLang()" style="flex:none;font-family:inherit;font-size:12px;padding:6px 12px;border-radius:9px;border:.5px solid var(--line2);background:var(--bg3);color:var(--text2);cursor:pointer">日本語</button>
+  </div>
+  <div class="dots" id="dots"></div>
+</header>
+
+<div class="stage">
+
+<!-- 0: intro -->
+<section class="scene active">
+  <div style="padding:40px 0 8px">
+    <span class="tag mono">INTERACTIVE DEMO</span>
+    <h1 data-i18n-html="intro_h"></h1>
+    <p data-i18n-html="intro_p"></p>
+    <p class="note" data-i18n="intro_note"></p>
+    <div class="row"><button class="btn primary" onclick="next()" data-i18n="nav_start">Start ▶</button></div>
+  </div>
+</section>
+
+<!-- 0a: account model -->
+<section class="scene">
+  <span class="tag mono" data-i18n="ac_tag"></span>
+  <h2 data-i18n="ac_h"></h2>
+  <p data-i18n-html="ac_p"></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 330" role="img"><title data-i18n="ac_svgtitle"></title>
+      <defs><marker id="aha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <!-- 上段：Ethereum型（コードと2つの残高が1つの箱に同居） -->
+      <text data-i18n="ac_eth_lab" x="20" y="26" fill="var(--text2)" font-size="13"></text>
+      <rect id="ethBox" x="150" y="38" width="300" height="98" rx="12" fill="var(--bg3)" stroke="var(--line2)" stroke-width="1"/>
+      <text data-i18n="ac_eth_contract" x="300" y="58" text-anchor="middle" fill="var(--amber)" font-size="13" font-weight="700"></text>
+      <rect x="170" y="72" width="120" height="50" rx="8" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".6"/>
+      <text data-i18n="ac_eth_youbal" x="230" y="90" text-anchor="middle" fill="var(--text2)" font-size="10"></text>
+      <text id="ethABal" x="230" y="108" text-anchor="middle" fill="var(--teal)" font-size="13" font-weight="700" font-family="DM Mono">100</text>
+      <rect x="310" y="72" width="120" height="50" rx="8" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".6"/>
+      <text data-i18n="ac_eth_peerbal" x="370" y="90" text-anchor="middle" fill="var(--text2)" font-size="10"></text>
+      <text id="ethBBal" x="370" y="108" text-anchor="middle" fill="var(--teal)" font-size="13" font-weight="700" font-family="DM Mono">100</text>
+      <line x1="20" y1="156" x2="580" y2="156" stroke="var(--line)" stroke-width="1"/>
+      <!-- 下段：Solana型（プログラムは上、データ口座は下） -->
+      <text data-i18n="ac_sol_lab" x="20" y="180" fill="var(--teal)" font-size="13"></text>
+      <rect id="solProg" x="230" y="194" width="140" height="44" rx="10" fill="var(--bg3)" stroke="var(--amber)" stroke-width="1"/>
+      <text data-i18n="ac_sol_prog" x="300" y="211" text-anchor="middle" fill="var(--amber)" font-size="12" font-weight="700"></text>
+      <text data-i18n="ac_sol_prog_sub" x="300" y="228" text-anchor="middle" fill="var(--text2)" font-size="10"></text>
+      <!-- データ口座2つ：左下・右下 -->
+      <rect id="solA" x="30" y="282" width="150" height="46" rx="9" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/>
+      <text data-i18n="ac_sol_youbal" x="105" y="300" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="700"></text>
+      <text id="solABal" x="105" y="318" text-anchor="middle" fill="var(--purple)" font-size="13" font-weight="700" font-family="DM Mono">100</text>
+      <rect id="solB" x="420" y="282" width="150" height="46" rx="9" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/>
+      <text data-i18n="ac_sol_peerbal" x="495" y="300" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="700"></text>
+      <text id="solBBal" x="495" y="318" text-anchor="middle" fill="var(--purple)" font-size="13" font-weight="700" font-family="DM Mono">100</text>
+      <!-- プログラムから下へ降り、外側へ折れて各データ口座の上面へ（L字） -->
+      <path id="solL1" d="M260 238 V262 H105 V280" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#aha)" opacity="0"/>
+      <path id="solL2" d="M340 238 V262 H495 V280" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#aha)" opacity="0"/>
+      <text data-i18n="ac_sol_write1" id="solLab1" x="105" y="258" text-anchor="middle" fill="var(--text3)" font-size="10" opacity="0"></text>
+      <text data-i18n="ac_sol_write2" id="solLab2" x="495" y="258" text-anchor="middle" fill="var(--text3)" font-size="10" opacity="0"></text>
+    </svg>
+  </div>
+  <p class="hint" id="acHint"></p>
+  <div class="row">
+    <button class="btn primary" id="acBtn" onclick="acStep()"></button>
+    <button class="btn" data-i18n="ac_reset" onclick="acReset()"></button>
+  </div>
+  <p class="note" data-i18n="ac_note"></p>
+</section>
+
+<!-- 0b: SOL & fees -->
+<section class="scene">
+  <span class="tag mono" data-i18n="fee_tag"></span>
+  <h2 data-i18n="fee_h"></h2>
+  <p data-i18n-html="fee_p"></p>
+  <div class="card">
+    <div class="field" style="border:none"><span class="k" data-i18n="fee_k1"></span><span class="mono">0.000005 SOL</span></div>
+    <div class="field"><span class="k" data-i18n="fee_k2"></span><span id="feePrice" class="mono">$150</span></div>
+    <div class="field"><span class="k" data-i18n="fee_k3"></span><span id="feeUsd" class="mono" style="color:var(--teal)">$0.00075</span></div>
+    <div class="field"><span class="k" data-i18n="fee_k4"></span><span id="feeCount" class="mono"></span></div>
+  </div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2);white-space:nowrap" data-i18n="fee_price_lab"></span>
+    <input type="range" class="slider" id="feeSlider" min="50" max="300" step="10" value="150" oninput="feeUpd()">
+    <span class="count" id="feeOut" style="min-width:54px;text-align:right">$150</span>
+  </div>
+  <div class="callout ok" style="margin-top:14px" data-i18n="fee_callout"></div>
+  <p class="note" data-i18n="fee_note"></p>
+</section>
+
+<!-- 0c: local fee markets -->
+<section class="scene">
+  <span class="tag mono" data-i18n="lf_tag"></span>
+  <h2 data-i18n="lf_h"></h2>
+  <p data-i18n-html="lf_p"></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 250" role="img"><title data-i18n="lf_svgtitle"></title>
+      <!-- 上段：Ethereum型（全体が上がる） -->
+      <text data-i18n="lf_eth_lab" x="20" y="26" fill="var(--text2)" font-size="13"></text>
+      <g id="ethCells"></g>
+      <line x1="20" y1="120" x2="580" y2="120" stroke="var(--line)" stroke-width="1"/>
+      <!-- 下段：Solana型（混雑口座だけ上がる） -->
+      <text data-i18n="lf_sol_lab" x="20" y="146" fill="var(--teal)" font-size="13"></text>
+      <g id="solCells"></g>
+    </svg>
+  </div>
+  <div class="card">
+    <div style="display:flex;gap:20px">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--text2)" data-i18n="lf_eth_name"></div>
+        <div style="font-size:13px;margin-top:4px"><span data-i18n="lf_median"></span> <b id="ethMed" class="mono" style="color:var(--amber)">—</b></div>
+        <div style="font-size:13px"><span data-i18n="lf_avg"></span> <b id="ethAvg" class="mono" style="color:var(--amber)">—</b></div>
+      </div>
+      <div style="flex:1;border-left:.5px solid var(--line);padding-left:20px">
+        <div style="font-size:12px;color:var(--text2)" data-i18n="lf_sol_name"></div>
+        <div style="font-size:13px;margin-top:4px"><span data-i18n="lf_median"></span> <b id="solMed" class="mono" style="color:var(--teal)">—</b></div>
+        <div style="font-size:13px"><span data-i18n="lf_avg"></span> <b id="solAvg" class="mono" style="color:var(--teal)">—</b></div>
+      </div>
+    </div>
+  </div>
+  <p class="hint" id="lfHint" style="margin-top:12px"></p>
+  <div class="row">
+    <button class="btn primary" id="lfBtn" onclick="lfStep()" data-i18n="lf_btn"></button>
+    <button class="btn" onclick="lfReset()" data-i18n="lf_reset"></button>
+  </div>
+  <p class="note" data-i18n="lf_note"></p>
+</section>
+
+<!-- 1: leader selection / schedule -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s1_tag"></span>
+  <h2 data-i18n="s1_h"></h2>
+  <p data-i18n-html="s1_p"></p>
+  <div style="font-size:13px;color:var(--text2);margin-bottom:6px" data-i18n="s1_strip_lab"></div>
+  <div id="s1strip" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px"></div>
+  <div class="note" style="margin-bottom:14px" data-i18n-html="s1_strip_note"></div>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 215" role="img"><title data-i18n="s1_svgtitle"></title>
+      <rect x="20" y="16" width="560" height="180" rx="18" fill="none" stroke="var(--teal-dim)" stroke-width="1" stroke-dasharray="6 5"/>
+      <text data-i18n="s1_network" x="40" y="40" fill="var(--text2)" font-size="13"></text>
+      <g id="s1A"><circle cx="120" cy="112" r="42" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width="1"/><text x="120" y="112" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="16" font-weight="700">A</text></g>
+      <g id="s1B"><circle cx="260" cy="112" r="30" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width="1"/><text x="260" y="112" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="15" font-weight="700">B</text></g>
+      <g id="s1C"><circle cx="380" cy="112" r="23" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width="1"/><text x="380" y="112" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="14" font-weight="700">C</text></g>
+      <g id="s1D"><circle cx="480" cy="112" r="19" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width="1"/><text x="480" y="112" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="13" font-weight="700">D</text></g>
+      <circle id="s1hA" cx="120" cy="112" r="42" fill="none" stroke="var(--amber)" stroke-width="2" opacity="0" style="transform-box:fill-box;transform-origin:center"/>
+      <circle id="s1hB" cx="260" cy="112" r="30" fill="none" stroke="var(--amber)" stroke-width="2" opacity="0" style="transform-box:fill-box;transform-origin:center"/>
+      <circle id="s1hC" cx="380" cy="112" r="23" fill="none" stroke="var(--amber)" stroke-width="2" opacity="0" style="transform-box:fill-box;transform-origin:center"/>
+      <circle id="s1hD" cx="480" cy="112" r="19" fill="none" stroke="var(--amber)" stroke-width="2" opacity="0" style="transform-box:fill-box;transform-origin:center"/>
+      <text data-i18n="s1_stake_lab" x="120" y="184" text-anchor="middle" fill="var(--text3)" font-size="12"></text>
+      <text x="260" y="184" text-anchor="middle" fill="var(--text3)" font-size="12">25%</text>
+      <text x="380" y="184" text-anchor="middle" fill="var(--text3)" font-size="12">15%</text>
+      <text x="480" y="184" text-anchor="middle" fill="var(--text3)" font-size="12">10%</text>
+    </svg>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:8px"><span data-i18n="s1_share_lab"></span><span class="count" data-i18n-html="s1_slot_time"></span></div>
+  <div class="bars">
+    <div class="barrow"><span class="lab">A</span><div class="track"><div id="s1barA" class="fill" style="background:var(--teal)"></div></div><span id="s1cntA" class="num">0%</span></div>
+    <div class="barrow"><span class="lab">B</span><div class="track"><div id="s1barB" class="fill" style="background:var(--teal)"></div></div><span id="s1cntB" class="num">0%</span></div>
+    <div class="barrow"><span class="lab">C</span><div class="track"><div id="s1barC" class="fill" style="background:var(--teal)"></div></div><span id="s1cntC" class="num">0%</span></div>
+    <div class="barrow"><span class="lab">D</span><div class="track"><div id="s1barD" class="fill" style="background:var(--teal)"></div></div><span id="s1cntD" class="num">0%</span></div>
+  </div>
+  <p class="hint" id="s1hint" style="margin-top:14px"></p>
+  <div class="row">
+    <button class="btn primary" id="s1play" onclick="s1Play(this)" data-i18n="s1_play"></button>
+    <button class="btn" onclick="s1Tick()" data-i18n="s1_oneslot"></button>
+    <button class="btn" onclick="s1Reset()" data-i18n="s1_reset"></button>
+  </div>
+</section>
+
+<!-- 1b: gulf stream (mempool-less) -->
+<section class="scene">
+  <span class="tag mono" data-i18n="g_tag"></span>
+  <h2 data-i18n="g_h"></h2>
+  <p data-i18n-html="g_p"></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 250" role="img"><title data-i18n="g_svgtitle"></title>
+      <defs><marker id="ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <!-- 上段：従来型 -->
+      <text data-i18n="g_typical" x="20" y="34" fill="var(--text2)" font-size="13"></text>
+      <circle cx="60" cy="80" r="13" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/><text data-i18n="g_tx" x="60" y="80" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="11"></text>
+      <rect id="gMem" x="200" y="58" width="150" height="44" rx="9" fill="var(--bg3)" stroke="var(--line2)" stroke-width="1" stroke-dasharray="4 4"/>
+      <text data-i18n="g_waitroom" x="275" y="74" text-anchor="middle" fill="var(--text2)" font-size="12"></text>
+      <text data-i18n="g_mempool" x="275" y="90" text-anchor="middle" fill="var(--text3)" font-size="11"></text>
+      <circle cx="500" cy="80" r="20" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="500" y="80" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="12" font-weight="700">L</text>
+      <text data-i18n="g_leader" x="500" y="116" text-anchor="middle" fill="var(--text3)" font-size="11"></text>
+      <line id="gA1" x1="75" y1="80" x2="196" y2="80" stroke="var(--purple)" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#ahg)" opacity=".5"/>
+      <line id="gA2" x1="354" y1="80" x2="476" y2="80" stroke="var(--text3)" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#ahg)" opacity=".5"/>
+      <text data-i18n="g_wait" id="gWait" x="275" y="128" text-anchor="middle" fill="var(--text3)" font-size="11" opacity="0"></text>
+      <line x1="20" y1="150" x2="580" y2="150" stroke="var(--line)" stroke-width="1"/>
+      <!-- 下段：Solana 取引を今後の数リーダーへ直接配る -->
+      <text data-i18n="g_solana" x="20" y="178" fill="var(--teal)" font-size="13"></text>
+      <circle cx="55" cy="210" r="13" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/><text data-i18n="g_tx" x="55" y="210" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="11"></text>
+      <!-- 今後のリーダー列 -->
+      <g><circle cx="360" cy="180" r="16" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text data-i18n="g_now" x="360" y="180" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="11" font-weight="700"></text></g>
+      <g><circle cx="450" cy="210" r="15" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".6"/><text data-i18n="g_next" x="450" y="210" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="11" font-weight="700"></text></g>
+      <g><circle cx="530" cy="232" r="14" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".5"/><text data-i18n="g_nextnext" x="530" y="232" text-anchor="middle" dominant-baseline="central" fill="var(--text2)" font-size="10" font-weight="700"></text></g>
+      <line id="gB1" x1="70" y1="208" x2="342" y2="182" stroke="var(--teal)" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#ahg)" opacity=".5"/>
+      <line id="gB2" x1="70" y1="210" x2="433" y2="210" stroke="var(--teal)" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ahg)" opacity=".5"/>
+      <line id="gB3" x1="70" y1="212" x2="514" y2="230" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="5 5" marker-end="url(#ahg)" opacity=".5"/>
+      <text data-i18n="g_forward" x="210" y="170" text-anchor="middle" fill="var(--text3)" font-size="11"></text>
+    </svg>
+  </div>
+  <p class="hint" id="gHint"></p>
+  <div class="row">
+    <button class="btn primary" id="gBtn" onclick="gStep()"></button>
+    <button class="btn" onclick="gReset()" data-i18n="g_reset"></button>
+    <button class="btn" style="margin-left:auto" onclick="gToggle()" data-i18n="g_more_btn"></button>
+  </div>
+  <div id="gMore" style="display:none;font-size:13px;line-height:1.7;color:var(--text2);background:var(--bg3);border-radius:11px;padding:12px 14px;margin-top:12px">
+    <b style="color:var(--text)" data-i18n="g_more_h"></b><br>
+    <span data-i18n="g_more_body"></span></div>
+  <p class="note" data-i18n="g_note"></p>
+</section>
+
+<!-- 1c: sealevel (parallel execution) -->
+<section class="scene">
+  <span class="tag mono" data-i18n="sl_tag"></span>
+  <h2 data-i18n="sl_h"></h2>
+  <p data-i18n-html="sl_p"></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 280" role="img"><title data-i18n="sl_svgtitle"></title>
+      <!-- 上段：直列 -->
+      <text data-i18n="sl_serial_lab" x="20" y="30" fill="var(--text2)" font-size="13"></text>
+      <rect x="20" y="44" width="560" height="34" rx="8" fill="var(--bg3)"/>
+      <rect id="serFill" x="20" y="44" width="0" height="34" rx="8" fill="var(--purple)" opacity=".25"/>
+      <g id="serCars"></g>
+      <text id="serTime" x="572" y="98" text-anchor="end" fill="var(--text3)" font-size="12">—</text>
+      <line x1="20" y1="120" x2="580" y2="120" stroke="var(--line)" stroke-width="1"/>
+      <!-- 下段：並列 -->
+      <text data-i18n="sl_parallel_lab" x="20" y="150" fill="var(--teal)" font-size="13"></text>
+      <rect x="20" y="164" width="560" height="20" rx="6" fill="var(--bg3)"/>
+      <rect x="20" y="190" width="560" height="20" rx="6" fill="var(--bg3)"/>
+      <rect x="20" y="216" width="560" height="20" rx="6" fill="var(--bg3)"/>
+      <rect x="20" y="242" width="560" height="20" rx="6" fill="var(--bg3)"/>
+      <g id="parCars"></g>
+      <text id="parTime" x="572" y="276" text-anchor="end" fill="var(--text3)" font-size="12">—</text>
+    </svg>
+  </div>
+  <p class="hint" id="slHint"></p>
+  <div class="row">
+    <button class="btn primary" id="slBtn" onclick="slRun()"></button>
+    <button class="btn" onclick="slReset()" data-i18n="sl_reset"></button>
+    <button class="btn" style="margin-left:auto" onclick="slToggle()" data-i18n="sl_more_btn"></button>
+  </div>
+  <div id="slMore" style="display:none;font-size:13px;line-height:1.7;color:var(--text2);background:var(--bg3);border-radius:11px;padding:12px 14px;margin-top:12px">
+    <b style="color:var(--text)" data-i18n="sl_more_h"></b><br>
+    <span data-i18n="sl_more_body"></span>
+  </div>
+  <p class="note" data-i18n="sl_note"></p>
+</section>
+
+<!-- 1d: TPS comparison (basics) -->
+<section class="scene">
+  <span class="tag mono" data-i18n="tps_tag"></span>
+  <h2 data-i18n="tps_h"></h2>
+  <p data-i18n-html="tps_p"></p>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px" data-i18n="tps_card_lab"></div>
+    <div id="tpsBars" class="bars"></div>
+  </div>
+  <p class="hint" id="tpsHint"></p>
+  <div class="row">
+    <button class="btn primary" id="tpsBtn" onclick="tpsReveal()" data-i18n="tps_btn"></button>
+    <button class="btn" onclick="tpsReset()" data-i18n="tps_reset"></button>
+  </div>
+  <div id="tpsNote" class="callout ok" style="margin-top:14px;display:none" data-i18n-html="tps_note_callout"></div>
+  <p class="note" data-i18n="tps_note"></p>
+</section>
+
+<!-- 2: deposit / delegate / deactivate / withdraw -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s2_tag"></span>
+  <h2 data-i18n="s2_h"></h2>
+  <p data-i18n-html="s2_p"></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 320" role="img"><title data-i18n="s2_svgtitle"></title>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <path id="s2arr3" d="M186 188 V96" fill="none" stroke="var(--green)" stroke-width="1.8" marker-end="url(#ah)" opacity="0"/>
+      <rect x="200" y="30" width="200" height="56" rx="10" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/>
+      <text data-i18n="s2_wallet" x="300" y="52" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700"></text>
+      <text data-i18n="s2_wallet_sub" x="300" y="72" text-anchor="middle" fill="var(--text2)" font-size="12"></text>
+      <line id="s2arr1" x1="300" y1="88" x2="300" y2="128" stroke="var(--text3)" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#ah)" opacity=".3"/>
+      <text data-i18n="s2_lab1" id="s2lab1" x="420" y="104" fill="var(--text3)" font-size="12"></text>
+      <text data-i18n="s2_lab1b" id="s2lab1b" x="420" y="121" fill="var(--text3)" font-size="12"></text>
+      <rect x="200" y="130" width="200" height="64" rx="10" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/>
+      <text data-i18n="s2_stakeacct" x="300" y="152" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700"></text>
+      <text data-i18n="s2_stakeacct_sub" x="300" y="172" text-anchor="middle" fill="var(--text2)" font-size="12"></text>
+      <line id="s2arr2" x1="300" y1="196" x2="300" y2="236" stroke="var(--text3)" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#ah)" opacity=".3"/>
+      <text data-i18n="s2_lab2" id="s2lab2" x="420" y="212" fill="var(--text3)" font-size="12"></text>
+      <text data-i18n="s2_lab2b" id="s2lab2b" x="420" y="229" fill="var(--text3)" font-size="12"></text>
+      <rect x="200" y="238" width="200" height="56" rx="10" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/>
+      <text data-i18n="s2_validator" x="300" y="260" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700"></text>
+      <text x="300" y="280" text-anchor="middle" fill="var(--text2)" font-size="12" font-family="DM Mono">vote account</text>
+    </svg>
+  </div>
+  <p class="hint" id="s2hint"></p>
+  <div class="row">
+    <button class="btn primary" id="s2btn" onclick="s2Next()"></button>
+    <button class="btn" onclick="s2Reset()" data-i18n="s2_reset"></button>
+  </div>
+  <p class="note" data-i18n="s2_note"></p>
+</section>
+
+<!-- 3: delegation effect -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s3_tag"></span>
+  <h2 data-i18n="s3_h"></h2>
+  <p data-i18n-html="s3_p"></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 210" role="img"><title data-i18n="s3_svgtitle"></title>
+      <defs><marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect x="150" y="20" width="430" height="170" rx="18" fill="none" stroke="var(--teal-dim)" stroke-width="1" stroke-dasharray="6 5"/>
+      <text data-i18n="s3_network" x="168" y="44" fill="var(--text2)" font-size="13"></text>
+      <rect x="10" y="84" width="120" height="56" rx="9" fill="var(--purple-bg)" stroke="var(--purple)" stroke-width=".8"/>
+      <text data-i18n="s3_you" x="70" y="104" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700"></text>
+      <text id="s3you" x="70" y="123" text-anchor="middle" fill="var(--text2)" font-size="11"></text>
+      <path id="s3arr" d="M130 112 H146 V58 H540 V92" fill="none" stroke="var(--purple)" stroke-width="1" stroke-dasharray="5 5" opacity=".35" marker-end="url(#ah3)"/>
+      <g><circle cx="250" cy="108" r="40" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="250" y="108" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="15" font-weight="700">A</text></g>
+      <g><circle cx="380" cy="108" r="28" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="380" y="108" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="14" font-weight="700">B</text></g>
+      <g><circle cx="470" cy="108" r="22" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="470" y="108" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="13" font-weight="700">C</text></g>
+      <g><circle id="s3cD" cx="545" cy="108" r="18" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="545" y="108" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="12" font-weight="700">D</text></g>
+      <text id="s3pA" x="250" y="178" text-anchor="middle" fill="var(--text3)" font-size="12">50.0%</text>
+      <text id="s3pB" x="380" y="178" text-anchor="middle" fill="var(--text3)" font-size="12">25.0%</text>
+      <text id="s3pC" x="470" y="178" text-anchor="middle" fill="var(--text3)" font-size="12">15.0%</text>
+      <text id="s3pD" x="545" y="178" text-anchor="middle" fill="var(--text3)" font-size="12">10.0%</text>
+    </svg>
+  </div>
+  <div class="metric"><span class="sub" data-i18n="s3_metric"></span><span class="big" id="s3pct" style="color:var(--teal)">10.0%</span></div>
+  <div id="s3delta" style="font-size:13px;color:var(--text2)"></div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2)" data-i18n="s3_slider"></span>
+    <input type="range" class="slider" id="s3amt" min="0" max="100" step="5" value="0" oninput="s3Upd(this.value)">
+    <span class="count" id="s3out" style="min-width:54px;text-align:right">0 SOL</span>
+  </div>
+  <p class="note" data-i18n="s3_note"></p>
+</section>
+
+<!-- 4: stake account lifecycle -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s4_tag"></span>
+  <h2 data-i18n="s4_h"></h2>
+  <p data-i18n-html="s4_p"></p>
+  <div class="pills">
+    <span class="pill" id="s4p-inactive" data-i18n="s4_pill_inactive"></span><span class="arrowtiny">›</span>
+    <span class="pill" id="s4p-activating" data-i18n="s4_pill_activating"></span><span class="arrowtiny">›</span>
+    <span class="pill" id="s4p-active" data-i18n="s4_pill_active"></span><span class="arrowtiny">›</span>
+    <span class="pill" id="s4p-deactivating" data-i18n="s4_pill_deactivating"></span>
+    <span class="arrowtiny" data-i18n="s4_pill_back"></span>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:15px;font-weight:500" data-i18n="s4_card_title"></span>
+      <span class="badge" id="s4badge"></span>
+    </div>
+    <div class="field"><span class="k" data-i18n="s4_k_val"></span><span id="s4val"></span></div>
+    <div class="field"><span class="k" data-i18n="s4_k_bal"></span><span id="s4bal" class="mono">100.00 SOL</span></div>
+    <div class="field"><span class="k" data-i18n="s4_k_rew"></span><span id="s4rew" class="mono">0.00 SOL</span></div>
+    <div class="field"><span class="k" data-i18n="s4_k_ep"></span><span id="s4ep" class="mono">0</span></div>
+  </div>
+  <div id="s4selRow" class="row"><span style="font-size:14px;color:var(--text2)" data-i18n="s4_sel_lab"></span>
+    <select id="s4sel"><option value="A" data-i18n="s4_val_a"></option><option value="B" data-i18n="s4_val_b"></option><option value="C" data-i18n="s4_val_c"></option></select></div>
+  <div id="s4acts" class="row"></div>
+  <p class="hint" id="s4hint" style="margin-top:14px"></p>
+  <div class="row">
+    <button class="btn primary" onclick="s4Next()" data-i18n="s4_next"></button>
+    <button class="btn" id="s4demo" onclick="s4Demo(this)"></button>
+    <button class="btn" onclick="s4Reset()" data-i18n="s4_reset"></button>
+  </div>
+</section>
+
+<!-- 5: commitment levels -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s5_tag"></span>
+  <h2 data-i18n="s5_h"></h2>
+  <p data-i18n-html="s5_p"></p>
+  <div class="pills">
+    <span class="pill mono" id="s5p-processed">processed</span><span class="arrowtiny">›</span>
+    <span class="pill mono" id="s5p-confirmed">confirmed</span><span class="arrowtiny">›</span>
+    <span class="pill mono" id="s5p-finalized">finalized</span>
+  </div>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 230" role="img"><title data-i18n="s5_svgtitle"></title>
+      <defs><marker id="ah5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect id="s5block" x="220" y="18" width="160" height="54" rx="10" fill="var(--bg3)" stroke="var(--line2)" stroke-width="1"/>
+      <text id="s5blocktx" x="300" y="40" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700"></text>
+      <text id="s5blocksub" x="300" y="59" text-anchor="middle" fill="var(--text2)" font-size="12" font-family="DM Mono"></text>
+      <line id="s5lA" x1="110" y1="120" x2="250" y2="74" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#ah5)" opacity="0"/>
+      <line id="s5lB" x1="235" y1="120" x2="285" y2="74" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#ah5)" opacity="0"/>
+      <line id="s5lC" x1="360" y1="120" x2="320" y2="74" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#ah5)" opacity="0"/>
+      <line id="s5lD" x1="470" y1="120" x2="350" y2="74" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#ah5)" opacity="0"/>
+      <g id="s5vA"><circle cx="110" cy="155" r="36" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="110" y="155" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="15" font-weight="700">A</text></g>
+      <g id="s5vB"><circle cx="235" cy="155" r="26" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="235" y="155" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="14" font-weight="700">B</text></g>
+      <g id="s5vC"><circle cx="360" cy="155" r="20" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="360" y="155" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="13" font-weight="700">C</text></g>
+      <g id="s5vD"><circle cx="470" cy="155" r="17" fill="var(--teal-bg)" stroke="var(--teal)" stroke-width=".8"/><text x="470" y="155" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="12" font-weight="700">D</text></g>
+      <text x="110" y="210" text-anchor="middle" fill="var(--text3)" font-size="12">50%</text>
+      <text x="235" y="210" text-anchor="middle" fill="var(--text3)" font-size="12">25%</text>
+      <text x="360" y="210" text-anchor="middle" fill="var(--text3)" font-size="12">15%</text>
+      <text x="470" y="210" text-anchor="middle" fill="var(--text3)" font-size="12">10%</text>
+    </svg>
+  </div>
+  <div id="s5voteSec">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:6px"><span data-i18n="s5_vote_lab"></span><span><span id="s5pct">0</span><span data-i18n-html="s5_vote_line"></span></span></div>
+    <div class="track" style="position:relative;height:18px"><div id="s5fill" class="fill" style="background:var(--teal)"></div><div style="position:absolute;top:-3px;bottom:-3px;left:66.7%;width:2px;background:var(--amber)"></div></div>
+  </div>
+  <div id="s5stackSec" style="display:none">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:6px"><span data-i18n="s5_stack_lab"></span><span><span id="s5k" class="mono">0</span> / 31</span></div>
+    <div id="s5stackBox" style="display:flex;flex-wrap:wrap;gap:3px;min-height:14px"></div>
+  </div>
+  <p class="hint" id="s5hint" style="margin-top:12px"></p>
+  <div class="row"><span id="s5acts" style="display:contents"></span><button class="btn" onclick="s5Reset()" data-i18n="s5_reset"></button></div>
+</section>
+
+<!-- 6: rewards / commission -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s6_tag"></span>
+  <h2 data-i18n="s6_h"></h2>
+  <p data-i18n-html="s6_p"></p>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px" data-i18n="s6_infl_lab"></div>
+    <div style="display:flex;height:22px;border-radius:8px;overflow:hidden;margin-bottom:6px;background:var(--bg3)">
+      <div id="s6iyou" style="background:var(--purple);height:100%;width:100%;transition:width .35s"></div>
+      <div id="s6ival" style="background:var(--teal);height:100%;width:0%;transition:width .35s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:14px">
+      <span><span style="color:var(--purple)">●</span> <span data-i18n="s6_you"></span> <b id="s6iyouAmt" class="mono">0.800</b></span>
+      <span><span style="color:var(--teal)">●</span> <span data-i18n="s6_validator"></span> <b id="s6ivalAmt" class="mono">0.000</b></span>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px" data-i18n="s6_mev_lab"></div>
+    <div style="display:flex;height:22px;border-radius:8px;overflow:hidden;margin-bottom:6px;background:var(--bg3)">
+      <div id="s6myou" style="background:var(--purple);height:100%;width:100%;transition:width .35s"></div>
+      <div id="s6mval" style="background:var(--teal);height:100%;width:0%;transition:width .35s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px">
+      <span><span style="color:var(--purple)">●</span> <span data-i18n="s6_you"></span> <b id="s6myouAmt" class="mono">0.200</b></span>
+      <span><span style="color:var(--teal)">●</span> <span data-i18n="s6_validator"></span> <b id="s6mvalAmt" class="mono">0.000</b></span>
+    </div>
+  </div>
+  <div class="metric"><span class="sub" data-i18n="s6_total_lab"></span><span class="big" id="s6total" style="color:var(--teal)">1.000</span></div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2);white-space:nowrap;width:120px" data-i18n="s6_infl_comm"></span>
+    <input type="range" class="slider" id="s6icomm" min="0" max="20" step="1" value="0" oninput="s6Upd()">
+    <span class="count" id="s6iout" style="min-width:42px;text-align:right">0%</span>
+  </div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2);white-space:nowrap;width:120px" data-i18n="s6_mev_comm"></span>
+    <input type="range" class="slider" id="s6mcomm" min="0" max="100" step="5" value="0" oninput="s6Upd()">
+    <span class="count" id="s6mout" style="min-width:42px;text-align:right">0%</span>
+  </div>
+  <div id="s6note" class="callout ok">—</div>
+  <p class="note" data-i18n="s6_note"></p>
+</section>
+
+<!-- 7: validator break-even -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s7_tag"></span>
+  <h2 data-i18n="s7_h"></h2>
+  <p data-i18n-html="s7_p"></p>
+  <div class="card">
+    <div class="field" style="border:none"><span class="k" data-i18n="s7_k_revc"></span><span id="s7revc" class="mono">— SOL</span></div>
+    <div class="field"><span class="k" data-i18n="s7_k_revm"></span><span id="s7revm" class="mono">— SOL</span></div>
+    <div class="field"><span class="k" data-i18n="s7_k_cost"></span><span id="s7cost" class="mono">— SOL</span></div>
+    <div style="margin:12px 0 6px;font-size:13px;color:var(--text2)" data-i18n="s7_rev_vs_cost"></div>
+    <div class="bars">
+      <div class="barrow"><span class="lab" style="width:40px" data-i18n="s7_rev"></span><div class="track" style="display:flex"><div id="s7brevc" style="height:100%;background:var(--teal);transition:width .35s"></div><div id="s7brevm" style="height:100%;background:var(--purple);transition:width .35s"></div></div></div>
+      <div class="barrow"><span class="lab" style="width:40px" data-i18n="s7_cost"></span><div class="track"><div id="s7bcost" class="fill" style="background:var(--amber)"></div></div></div>
+    </div>
+    <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:8px"><span><span style="color:var(--teal)">●</span> <span data-i18n="s7_leg_infl"></span></span><span><span style="color:var(--purple)">●</span> <span data-i18n="s7_leg_mev"></span></span></div>
+  </div>
+  <div class="metric"><span class="sub" data-i18n="s7_net_lab"></span><span class="big" id="s7net">—</span></div>
+  <div id="s7delta" style="font-size:13px;color:var(--text2)">—</div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2);white-space:nowrap" data-i18n="s7_stake_lab"></span>
+    <input type="range" class="slider" id="s7stake" min="0" max="400000" step="5000" value="100000" oninput="s7Upd()">
+    <span class="count" id="s7stakeout" style="min-width:74px;text-align:right">100,000</span>
+  </div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2);white-space:nowrap" data-i18n="s7_comm_lab"></span>
+    <input type="range" class="slider" id="s7comm" min="0" max="10" step="1" value="0" oninput="s7Upd()">
+    <span class="count" id="s7commout" style="min-width:74px;text-align:right">0%</span>
+  </div>
+  <div id="s7note" class="callout warn">—</div>
+  <p class="note" data-i18n="s7_note"></p>
+  <div class="callout" style="background:var(--bg3);color:var(--text2)" data-i18n-html="s7_alpenglow"></div>
+</section>
+
+<!-- 8: DAT NAV flywheel -->
+<section class="scene">
+  <span class="tag mono" data-i18n="s8_tag"></span>
+  <h2 data-i18n="s8_h"></h2>
+  <p data-i18n-html="s8_p"></p>
+  <div class="card">
+    <div class="field" style="border:none"><span class="k" data-i18n="s8_k_hold"></span><span id="s8hold" class="mono">1,000,000</span></div>
+    <div class="field"><span class="k" data-i18n="s8_k_shares"></span><span id="s8shares" class="mono">10,000,000</span></div>
+    <div class="field"><span class="k" data-i18n="s8_k_pps"></span><span id="s8pps" class="mono" style="color:var(--teal)">0.1000</span></div>
+    <div class="field"><span class="k" data-i18n="s8_k_mult"></span><span id="s8mult" class="mono">1.00x</span></div>
+  </div>
+  <div class="metric"><span class="sub" data-i18n="s8_mnav_lab"></span><span class="big" id="s8mnav">2.0x</span></div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:6px" data-i18n="s8_slider_note"></div>
+  <div class="row">
+    <span style="font-size:14px;color:var(--text2);white-space:nowrap" data-i18n="s8_market_lab"></span>
+    <input type="range" class="slider" id="s8slider" min="50" max="300" step="5" value="200" oninput="s8Mnav()">
+  </div>
+  <div id="s8note" class="callout ok" style="margin-bottom:6px">—</div>
+  <div class="row">
+    <button class="btn primary" id="s8raise" onclick="s8Raise()" data-i18n="s8_raise"></button>
+    <button class="btn" id="s8demo" onclick="s8Demo(this)"></button>
+    <button class="btn" onclick="s8Reset()" data-i18n="s8_reset"></button>
+  </div>
+  <div id="s8log" style="margin-top:14px;display:flex;flex-direction:column;gap:6px"></div>
+  <p class="note" data-i18n="s8_note"></p>
+</section>
+
+</div><!-- /stage -->
+
+<footer>
+  <button class="btn" id="navPrev" onclick="prev()" data-i18n="nav_prev">◀ Back</button>
+  <span class="count spacer" id="navCount"></span>
+  <button class="btn primary" id="navNext" onclick="next()" data-i18n="nav_next">Next ▶</button>
+</footer>
+</div>
+
+<script>
+/* ---------- i18n engine ---------- */
+let lang = 'en';
+const I18N = {
+  en: {
+    brand: 'Solana, <b>Hands-On</b>',
+    langBtn: '日本語',
+    nav_prev: '◀ Back',
+    nav_next: 'Next ▶',
+    nav_start: 'Start ▶',
+    intro_h: 'What is Solana,<br>really?',
+    intro_p: 'A hands-on introduction to how Solana works — you <b>play with it</b> instead of just reading. From the account model and fees to leader selection, staking, consensus, and rewards, you explore one idea per screen.',
+    intro_note: '',
+
+    /* SCENE 1: account model */
+    ac_tag: 'SCENE 1 / Basics: Account Model',
+    ac_h: 'Separate code from data',
+    ac_p: 'Many chains (the Ethereum model) keep state <b>inside</b> the program itself. Solana is different: it separates the <b>program (code)</b> from <b>accounts (data)</b>, and programs <b>reach out to external accounts</b>. This seemingly minor difference is the foundation for later speed (parallel execution). Run a transfer and compare.',
+    ac_svgtitle: 'Account model comparison',
+    ac_eth_lab: 'Ethereum model (code and data live in one box)',
+    ac_eth_contract: '⚙ Contract (code)',
+    ac_eth_youbal: 'Your balance',
+    ac_eth_peerbal: "Recipient's balance",
+    ac_sol_lab: 'Solana model (code and data are separate accounts)',
+    ac_sol_prog: '⚙ Program',
+    ac_sol_prog_sub: 'Code only (holds no data)',
+    ac_sol_youbal: 'Your balance',
+    ac_sol_peerbal: "Recipient's balance",
+    ac_sol_write1: 'write −10',
+    ac_sol_write2: 'write +10',
+    ac_note: 'The Solana way is to declare, every time, exactly <b>which accounts a program will touch</b>. That lets the network spot non-overlapping work and run it in parallel (→ SCENE 6 Sealevel). A stake account (SCENE 8) is just one kind of "your own data account."',
+    ac_btn0: 'Run transfer ▶',
+    ac_btn1: 'On Solana? ▶',
+    ac_reset: 'Reset',
+    ac_hint0: 'Press "Run transfer" to see the Ethereum model first (everything stays inside), then the Solana model (reaching out to external accounts). Example: you send 10 to a recipient.',
+    ac_hint1: 'Ethereum model: the rewrite of your −10 / recipient +10 all happens "inside the contract\'s box." Because the balance data lives internally, it\'s hard to see from outside which data was touched, and other work generally has to wait in line.',
+    ac_hint2: 'Solana model: the program (code) declares in advance that it will "touch" the two external balance accounts, then writes −10 to your balance and +10 to the recipient\'s. Because the accounts used are explicit, unrelated transfers can be processed at the same time.',
+
+    /* SCENE 2: SOL & fees */
+    fee_tag: 'SCENE 2 / Basics: SOL and Fees',
+    fee_h: 'Why is it so cheap?',
+    fee_p: "Solana's currency, <b>SOL</b>, has two roles: <b>paying fees</b> and <b>staking</b> (covered later). The base fee is fixed at <b>0.000005 SOL</b> per transaction. It doesn't change under congestion. Let's see just how cheap that is.",
+    fee_k1: 'Base fee (per transaction)',
+    fee_k2: 'Assumed SOL price',
+    fee_k3: 'Cost per transaction',
+    fee_k4: 'Transactions per dollar',
+    fee_price_lab: 'SOL price',
+    fee_count: '≈ {n} per $1',
+    fee_callout: "The base fee is fixed by the protocol and doesn't spike with congestion like Ethereum's gas. That's what makes micropayments and high-frequency trading viable.",
+    fee_note: '50% of the base fee goes to the leader (validator) and 50% is burned. When in a hurry you can add a small priority fee, but it\'s usually under a cent. You also pay fees in SOL when sending other tokens.',
+
+    /* SCENE 3: local fee markets */
+    lf_tag: 'SCENE 3 / Basics: Local Fee Markets',
+    lf_h: "Congestion doesn't spill over",
+    lf_p: "When transactions flood a popular app and cause congestion, many chains raise <b>the fee for everyone</b> — even your unrelated transfer gets expensive. Solana <b>confines congestion to just that account</b> (local fee markets). Press \"Trigger congestion\" to compare.",
+    lf_svgtitle: 'Local fee markets',
+    lf_eth_lab: 'Typical chain (fees rise across the board)',
+    lf_sol_lab: 'Solana (only the congested account rises)',
+    lf_eth_name: 'Typical chain',
+    lf_sol_name: 'Solana',
+    lf_median: 'Median',
+    lf_avg: 'Average',
+    lf_btn: 'Trigger congestion ▶',
+    lf_reset: 'Reset',
+    lf_note: 'Green = normal fee, red = spiking. On Solana only transactions touching the congested account get expensive; unrelated ones stay cheap. So even when the "average" rises, the "median" (what a typical person pays) barely moves. In the high-load period of November 2024, the median stayed about 1/35th of the average.',
+    lf_hint0: 'Normally everything is cheap (green) on both. Press "Trigger congestion" to simulate a flood of transactions hitting a popular app (a DEX).',
+    lf_hint1: 'A typical chain spikes across the board, so median and average both jump by about the same amount. On Solana only the 3 transactions touching the congested account spike; the other 7 stay cheap. So the "median" barely moves and only the "average" ticks up.',
+
+    /* SCENE 4: leader schedule */
+    s1_tag: 'SCENE 4 / Leader Selection',
+    s1_h: 'The order of block production is predetermined',
+    s1_p: "Solana's time is divided into <b>slots</b>, each about <b>0.4 seconds</b>. In each slot, a leader produces one block. The leader rotates <b>every 4 slots</b>, and that order (the leader schedule) is <b>fixed in advance at the start of each epoch</b>, weighted by stake. Press play to advance time.",
+    s1_strip_lab: 'Leader schedule (4 slots = 1 leader, decided well ahead)',
+    s1_strip_note: 'Filled = produced / Outline = upcoming (scheduled) / <span style="color:var(--amber)">Amber = current</span>',
+    s1_svgtitle: 'Leader selection',
+    s1_network: 'Solana network',
+    s1_stake_lab: 'Stake 50%',
+    s1_share_lab: 'Share of blocks produced by each validator',
+    s1_slot_time: 'Slot <span id="s1slot">0</span> · ≈ <span id="s1time">0.0</span>s',
+    s1_play: 'Play ▶',
+    s1_pause: 'Pause ⏸',
+    s1_oneslot: '1 slot',
+    s1_reset: 'Reset',
+    s1_hint_init: 'Press "Play ▶" and blocks are produced about every 0.4s, following the schedule.',
+    s1_hint_early: 'One block every ~0.4s. The leader rotates every 4 slots.',
+    s1_hint_mid: 'The share of blocks produced converges toward each validator\'s stake (A 50 / B 25 / C 15 / D 10).',
+    s1_hint_end: "You've reached the end of this schedule. A real epoch runs about 432,000 slots. Reset to start over.",
+
+    /* SCENE 5: Gulf Stream */
+    g_tag: 'SCENE 5 / Why so fast? Gulf Stream',
+    g_h: 'Speed from having no "waiting line"',
+    g_p: 'On many chains, submitted transactions first pile up in a shared <b>waiting room (mempool)</b>, and the leader picks from there. Solana is different. Because the order is known in advance, transactions can be <b>forwarded ahead of time to the current leader and the next few upcoming leaders</b>. The waiting room itself is unnecessary (Gulf Stream). Let\'s compare.',
+    g_svgtitle: 'Gulf Stream',
+    g_typical: 'Typical chain',
+    g_tx: 'Tx',
+    g_waitroom: 'Waiting room',
+    g_mempool: 'Mempool',
+    g_leader: 'Leader',
+    g_wait: 'Under congestion, transactions wait here',
+    g_solana: 'Solana (Gulf Stream)',
+    g_now: 'Now',
+    g_next: 'Next',
+    g_nextnext: 'After',
+    g_forward: 'No waiting room → forwarded to upcoming leaders',
+    g_btn0: 'Send a transaction ▶',
+    g_btn1: 'On Solana? ▶',
+    g_reset: 'Reset',
+    g_more_btn: 'Details',
+    g_more_h: 'How it differs from a mempool',
+    g_more_body: 'On Bitcoin and Ethereum, submitted transactions enter a shared holding area called the mempool and wait there unconfirmed. Under congestion tens of thousands pile up, higher-fee transactions get prioritized, and delays and fee spikes follow. Solana has no holding area: it leverages the fact that the leader order is known in advance to forward transactions directly to upcoming leaders. Leaders can process transactions ahead of time under load and drop invalid ones.',
+    g_note: 'Because the leader order is predetermined (SCENE 4), transactions can be handed ahead to the upcoming leaders. This is one of the mechanisms behind Solana\'s low latency. Alpenglow keeps the premise that leader order is fixed in advance, so this "no mempool" idea is preserved.',
+    g_hint0: 'Press "Send a transaction" to see how a typical chain works first.',
+    g_hint1: 'On a typical chain, a transaction first enters the shared waiting room (mempool), and the leader pulls from there. Under congestion, a queue forms here.',
+    g_hint2: 'Solana knows the upcoming leader order in advance, so instead of parking transactions in a waiting room, it forwards them ahead of time to the current leader and the next few. With no queue, it resists congestion and stays fast.',
+
+    /* SCENE 6: Sealevel */
+    sl_tag: 'SCENE 6 / Why so fast? Sealevel',
+    sl_h: 'Speed from processing in parallel',
+    sl_p: 'Many chains process transactions <b>one at a time, in order</b> (serial). Solana is different. Because each transaction <b>declares which accounts it will touch</b> up front, <b>non-overlapping transactions run at the same time</b> (parallel = Sealevel). Run both and compare the processing time.',
+    sl_svgtitle: 'Sealevel parallel execution',
+    sl_serial_lab: 'Typical chain (serial · 1 lane)',
+    sl_parallel_lab: 'Solana (parallel · 4 lanes = CPU cores)',
+    sl_btn0: 'Process 8 transactions ▶',
+    sl_btn1: 'Again ▶',
+    sl_reset: 'Reset',
+    sl_more_btn: 'Details',
+    sl_more_h: 'What "in parallel if they don\'t overlap" means',
+    sl_more_body: "Before executing, each transaction declares the accounts it reads and writes. Transactions whose write sets don't overlap can't affect each other, so they run simultaneously on separate CPU cores. Transactions that write to the same account wait their turn (serial). Thanks to this, huge volumes are processed without waiting on unrelated work. Alpenglow is an upgrade to the consensus mechanism; this execution engine (Sealevel) remains.",
+    sl_note: 'The diagram is illustrative. Real core counts are in the dozens, and the degree of parallelism depends on how the declared accounts overlap.',
+    sl_hint0: 'Press "Process 8 transactions" and the top (serial) and bottom (parallel) start at the same time. Which finishes first?',
+    sl_hint_run: 'Processing… the top goes one at a time, the bottom advances 4 at once.',
+    sl_sertime_done: 'time for 8 transactions',
+    sl_sertime_running: '(still going…)',
+    sl_partime_done: 'done in the time of 2 transactions',
+    sl_hint_done: 'With the same 8 transactions, running non-overlapping ones across 4 lanes (cores) finishes in about 1/4 the serial time. That\'s the speed of parallel execution (Sealevel).',
+
+    /* SCENE 7: TPS comparison */
+    tps_tag: 'SCENE 7 / Why so fast? Speed comparison',
+    tps_h: 'So how fast is it, really?',
+    tps_p: 'When Gulf Stream and Sealevel kick in, what happens to throughput (TPS = transactions per second)? Here are the <b>measured TPS</b> of major chains. Guess first, then reveal the answer. Faster isn\'t "better" — it reflects <b>what each chain prioritized</b>.',
+    tps_card_lab: 'Measured TPS (transactions per second) and what each chain prioritizes',
+    tps_btn: 'Reveal results ▶',
+    tps_reset: 'Reset',
+    tps_note_callout: 'High TPS and low fees are what make <b>micropayments, high-frequency trading, and real-time apps</b> realistic. Meanwhile Bitcoin\'s robustness and Ethereum\'s decentralization are different kinds of value. The "right design" depends on the use case.',
+    tps_note: 'Source: Chainspect measured values (as of early June 2026). TPS varies by period and measurement method, and instantaneous values can exceed theoretical limits. Solana has a theoretical max of 65,000 and a measured peak of ~6,300, which differs from its measured average (hundreds to over a thousand). Base is an Ethereum Layer 2. Approximate average fees: Solana ≈ $0.00025, Ethereum ≈ $2.9, BNB ≈ $0.13.',
+    tps_hint0: 'Can you guess which chain is fastest? Press "Reveal results" and the bars grow to show the answer.',
+    tps_hint1: 'Solana stands out even in measured TPS. But that\'s the result of a "speed-first design." Bitcoin and Ethereum prioritize different values (robustness, decentralization).',
+    tps_tag_throughput: 'Throughput-focused',
+    tps_tag_l2: 'Ethereum L2',
+    tps_tag_decentral: 'Decentralization & security focused',
+    tps_tag_robust: 'Robustness-focused',
+
+    /* SCENE 8: stake account lifecycle intro */
+    s2_tag: 'SCENE 8 / What a Stake Account Really Is',
+    s2_h: 'Deposit → Delegate → Deactivate → Withdraw',
+    s2_p: 'Staking means depositing SOL into <b>your own</b> stake account, then delegating it to a validator. Ownership never transfers, so you can deactivate and withdraw any time. Let\'s walk through one full cycle.',
+    s2_svgtitle: 'Deposit and delegate',
+    s2_wallet: 'Wallet',
+    s2_wallet_sub: 'Your SOL',
+    s2_lab1: '① Deposit',
+    s2_lab1b: 'Ownership stays yours',
+    s2_stakeacct: 'Stake account',
+    s2_stakeacct_sub: 'Account you control',
+    s2_lab2: '② Delegate',
+    s2_lab2b: 'Ownership does not transfer',
+    s2_validator: 'Validator',
+    s2_btn0: '① Deposit ▶',
+    s2_btn1: '② Delegate ▶',
+    s2_btn2: '③ Deactivate ▶',
+    s2_btn3: '④ Withdraw ▶',
+    s2_reset: 'Reset',
+    s2_note: 'Purple = under your control / Teal = validator. The validator never custodies your SOL.',
+    s2_hint_init: 'Start by pressing "① Deposit."',
+    s2_hint1: '① Deposit complete. The SOL only moved from "your wallet" to "your stake account." It\'s not yet involved with any validator.',
+    s2_hint2: '② Delegation complete. You only pointed your stake account at a validator — you didn\'t hand over the SOL itself.',
+    s2_hint3: '③ Deactivated. You removed the delegation to the validator. After the next epoch passes, it becomes withdrawable.',
+    s2_hint4: '④ Withdrawal complete. The SOL returned to your wallet. Throughout deposit → delegate → deactivate → withdraw, it was always yours.',
+
+    /* SCENE 9: delegation effect */
+    s3_tag: 'SCENE 9 / The Effect of Delegation',
+    s3_h: 'More delegation, higher chance of being chosen',
+    s3_p: 'When you delegate to the smallest validator <b>D</b>, its <b>chance of becoming leader</b> rises in proportion to that amount. Try moving the slider.',
+    s3_svgtitle: 'Effect of delegation',
+    s3_network: 'Solana network',
+    s3_you: 'You',
+    s3_you_amt: 'Delegated {n} SOL',
+    s3_metric: 'D\'s chance of becoming leader',
+    s3_delta0: 'No delegation',
+    s3_delta: 'From 10.0% with no delegation, +{n} points',
+    s3_slider: 'Delegate to D',
+    s3_note: '※ The SOL is only deposited in your own stake account. Delegating it does not hand it to the validator, and you can withdraw any time.',
+
+    /* SCENE 10: stake account lifecycle */
+    s4_tag: 'SCENE 10 / What You Can Do with a Stake Account',
+    s4_h: 'You stay in control the whole time',
+    s4_p: 'Delegate, deactivate, withdraw, change your delegation. You operate the stake account. But changes take effect only after <b>the next epoch</b>. If the flow is unclear, try "Play demo" first to watch the whole thing.',
+    s4_pill_inactive: 'Inactive',
+    s4_pill_activating: 'Activating',
+    s4_pill_active: 'Active',
+    s4_pill_deactivating: 'Deactivating',
+    s4_pill_back: '→ back to Inactive',
+    s4_card_title: 'Stake account',
+    s4_k_val: 'Delegated to',
+    s4_k_bal: 'Principal',
+    s4_k_rew: 'Accrued rewards',
+    s4_k_ep: 'Current epoch',
+    s4_sel_lab: 'Choose a validator',
+    s4_val_a: 'Validator A',
+    s4_val_b: 'Validator B',
+    s4_val_c: 'Validator C',
+    s4_next: 'Next epoch ▶',
+    s4_demo: 'Play demo ▶',
+    s4_demo_stop: 'Stop',
+    s4_reset: 'Reset',
+    s4_none: 'None',
+    s4_lab_inactive: 'Inactive',
+    s4_lab_activating: 'Activating',
+    s4_lab_active: 'Active',
+    s4_lab_deactivating: 'Deactivating',
+    s4_lab_withdrawn: 'Withdrawn',
+    s4_btn_delegate: 'Delegate',
+    s4_btn_withdraw: 'Withdraw',
+    s4_btn_change: 'Change delegation',
+    s4_btn_deactivate: 'Deactivate',
+    s4_btn_redeposit: 'Deposit again',
+    s4_hint_init: 'A stake account funded by depositing SOL from your wallet. Start by pressing "Delegate."',
+    s4_hint_delegate: 'Delegated. It becomes "Active" next epoch and rewards start accruing. Try pressing "Next epoch ▶."',
+    s4_hint_redelegate: 'To change your delegation, first deactivate. Advance to the next epoch.',
+    s4_hint_deact: 'Deactivated. It becomes withdrawable next epoch.',
+    s4_hint_withdraw: 'Withdrew {n} SOL to your wallet (principal + rewards). The SOL was always yours. With "Deposit again" you can delegate once more.',
+    s4_hint_redeposit: 'Deposited 100 SOL again. You can delegate again.',
+    s4_hint_done: 'Already withdrawn. Use "Deposit again" or "Reset" to try again.',
+    s4_hint_active: 'Activation complete, now "Active." From here rewards accrue automatically.',
+    s4_hint_redeleg_done: 'Deactivation complete. Pick another validator and press "Delegate" again to change your delegation.',
+    s4_hint_deact_done: 'Deactivation complete. Now you can "Withdraw" (principal + rewards).',
+    s4_hint_accrue: 'The epoch advanced and rewards reached {n} SOL. While active, they grow automatically like this.',
+    s4_hint_inactive: 'While inactive, rewards don\'t grow. Delegate and they start accruing.',
+    s4_demo_hint: 'Play demo: automatically advances through the full flow.',
+
+    /* SCENE 11: commitment levels */
+    s5_tag: 'SCENE 11 / processed → confirmed → finalized',
+    s5_h: 'The 3 stages to finality',
+    s5_p: 'A produced block is not final immediately. First it is <b>processed</b>, then with over 2/3 supermajority it becomes <b>confirmed</b>, and once <b>31 more</b> blocks are stacked on top it becomes <b>finalized</b> (irreversible). Advance step by step.',
+    s5_svgtitle: 'Commitment levels',
+    s5_block: 'Block',
+    s5_block_processed: 'processed',
+    s5_block_confirmed: 'confirmed',
+    s5_block_finalized: 'finalized ✓',
+    s5_sub_processed: 'processed',
+    s5_sub_confirmed: 'confirmed',
+    s5_sub_finalized: 'finalized',
+    s5_vote_lab: 'Stake that voted yes',
+    s5_vote_line: '% <span style="color:var(--text3)">/ finality line 67%</span>',
+    s5_stack_lab: 'Confirmed blocks stacked on top',
+    s5_btn_vote: 'Collect votes ▶',
+    s5_btn_stack: 'Stack blocks on top ▶',
+    s5_reset: 'Reset',
+    s5_hint_init: 'A block is "processed" right after it\'s produced. It can still be reverted. Press "Collect votes ▶" to gather support.',
+    s5_hint_vote: '{v} voted (stake {p}%). Total support is {sum}%. Collect votes up to the finality line (67%).',
+    s5_hint_confirmed: 'Support crossed 2/3, so it\'s now confirmed. In practice it\'s nearly final here (optimistic confirmation). Next, stack blocks up to finalized.',
+    s5_hint_stacking: 'Subsequent confirmed blocks are stacking on top of the confirmed block…',
+    s5_hint_finalized: '31 blocks stacked on top of confirmed, making it finalized. Max lockout is reached and no one can reverse it.',
+
+    /* SCENE 12: rewards / commission */
+    s6_tag: 'SCENE 12 / Rewards & Commission',
+    s6_h: 'What "0%" really means',
+    s6_p: "Commission doesn't apply to <b>all</b> rewards. Rewards split into <b>inflation rewards</b> and <b>MEV</b> (and more), and <b>each can set a separate commission rate</b>. So most \"0% commission\" means <b>0% on inflation</b>, while MEV is often charged separately. Move the two independently.",
+    s6_infl_lab: 'Distribution of 0.80 SOL inflation reward',
+    s6_mev_lab: 'Distribution of 0.20 SOL MEV reward',
+    s6_you: 'You',
+    s6_validator: 'Validator',
+    s6_total_lab: 'Total you actually receive',
+    s6_infl_comm: 'Inflation commission',
+    s6_mev_comm: 'MEV commission',
+    s6_note_hidden: 'This is the "hidden commission." Even though 0% inflation fee looks "free," {n}% is taken from MEV, dropping your take to {t} SOL. Always check the MEV commission on StakeWiz.',
+    s6_note_zero: 'Inflation and MEV both 0%. The whole reward goes to you — the most generous setting for delegators (it exists, but verify the operator\'s sustainability and uptime).',
+    s6_note_low: 'Both modest. A delegator-friendly setting. You receive {t} SOL total.',
+    s6_note_high: 'Fees are on the higher side. Your take is down to {t} SOL total. Note that inflation and MEV are charged separately.',
+    s6_note: 'Assumption: of a 1.0 SOL total reward, 0.8 is inflation and 0.2 is MEV (the split varies by period). Combinations like "0% inflation / 50% MEV" really exist. Note that the displayed commission often refers only to the inflation portion. Real yield depends on both fees plus uptime.',
+
+    /* SCENE 13: validator break-even */
+    s7_tag: 'Advanced ① / Validator Break-Even',
+    s7_h: 'Can stake outweigh the cost of voting?',
+    s7_p: "As we saw in SCENE 12, a validator's income splits into <b>commission on inflation rewards</b> and <b>MEV commission + block rewards</b>. So even at 0% inflation fee, you're profitable if MEV and block rewards cover the cost. Move the stake to find the break-even point.",
+    s7_k_revc: 'Commission on inflation rewards',
+    s7_k_revm: 'MEV commission + block rewards',
+    s7_k_cost: 'Annual cost (voting + operations)',
+    s7_rev_vs_cost: 'Revenue (inflation + MEV etc.) vs cost',
+    s7_rev: 'Revenue',
+    s7_cost: 'Cost',
+    s7_leg_infl: 'Inflation commission',
+    s7_leg_mev: 'MEV etc.',
+    s7_net_lab: 'Annual net profit/loss',
+    s7_stake_lab: 'Delegated stake',
+    s7_comm_lab: 'Inflation fee',
+    s7_delta: 'Break-even is about {n} SOL of delegation (at this commission rate)',
+    s7_note_be0: 'Profitable even at 0% inflation fee. MEV commission and block rewards alone exceed the cost. This is why so many validators on StakeWiz are "0%" (a strategy of passing inflation rewards to delegators and earning via MEV etc.).',
+    s7_note_be: 'Profitable. Inflation commission plus MEV etc. together exceed the cost.',
+    s7_note_loss: 'In the red. Delegation is insufficient and you burn SOL every epoch. This fixed cost (voting cost) was the main reason validator count fell from 2,560 (2023) to about 770 (2026).',
+    s7_note: 'Assumptions: staking yield ≈ 6.5%, voting cost ≈ 400 SOL/yr (theoretical max; measured ≈ 300–350 SOL due to slot misses), operating cost ≈ 80 SOL/yr (≈ $12k). MEV and block rewards are approximated by a simplified model roughly proportional to delegated stake. Self-stake is excluded. Actual figures vary widely by client and network activity.',
+    s7_alpenglow: '⚡ Change after Alpenglow: per-slot voting fees are abolished in favor of a fixed VAT (Validator Admission Ticket). Per-epoch voting cost drops from ≈ 2.16 SOL to ≈ 1.6 SOL — <b style="color:var(--text)">roughly 20% lower</b>. This lowers the break-even for small validators and makes entry easier.',
+
+    /* SCENE 14: DAT NAV flywheel */
+    s8_tag: 'Advanced ② / The DAT NAV Flywheel',
+    s8_h: 'The same raise can be friend or foe',
+    s8_p: 'A DAT company issues shares to buy more SOL. When the share price is above its underlying value (NAV) — a <b>premium (mNAV &gt; 1)</b> — a raise <b>increases SOL per share</b> (accretive). But <b>each raise adds share supply, and mNAV naturally falls</b>. Overdo it and the premium vanishes, mNAV drops below 1, and the flywheel reverses (dilution). Do a few raises and see.',
+    s8_k_hold: 'SOL held',
+    s8_k_shares: 'Shares outstanding',
+    s8_k_pps: 'SOL per share',
+    s8_k_mult: 'Multiple from start',
+    s8_mnav_lab: 'Current mNAV (share price ÷ underlying)',
+    s8_slider_note: 'Market slider (external conditions) + automatic decline from raises, combined',
+    s8_market_lab: 'Market: bearish ↔ bullish',
+    s8_raise: 'Raise 20% and buy SOL ▶',
+    s8_demo: 'Play demo ▶',
+    s8_demo_stop: 'Stop',
+    s8_reset: 'Reset',
+    s8_note: 'Assumptions: start with 1,000,000 SOL held and 10,000,000 shares (1 share = 0.1 SOL); each raise issues 20% more shares and buys SOL with all of it. The ≈ 0.35 mNAV drop per raise is a simplified stand-in for "added supply erodes the premium"; the real drop is set by the market. The SOL price cancels out on both sides, so it doesn\'t affect SOL-per-share.',
+    s8_note_premium: 'Premium (mNAV>1){d}. Raising now increases SOL per share (accretive). But each press pushes mNAV down.',
+    s8_note_discount: 'Discount (mNAV<1){d}. Raising now decreases SOL per share — dilution. The flywheel is reversing.',
+    s8_note_par: 'Exactly mNAV=1. Raising doesn\'t change SOL per share (this is the threshold).',
+    s8_dropnote: ' (from market {m}x, minus {d} for raises)',
+    s8_log_row: '<b style="color:var(--text)">#{round}</b> raised at mNAV {m}x → {before} → <b style="color:{color}">{after}</b> SOL per share ({sign}{pct}%)',
+
+  },
+  ja: {
+    brand: 'Solana を、<b>触って理解する</b>',
+    langBtn: 'English',
+    nav_prev: '◀ 前へ',
+    nav_next: '次へ ▶',
+    nav_start: 'はじめる ▶',
+    intro_h: 'Solanaって、<br>どんな仕組み？',
+    intro_p: 'Solanaの仕組みを、読むのではなく<b>触って</b>理解する入門デモです。アカウントモデル・手数料からリーダー選出・ステーキング・合意形成・報酬まで、画面ごとに1つずつ体験していきます。',
+    intro_note: '',
+
+    /* SCENE 1: account model */
+    ac_tag: 'SCENE 1 / 基本：アカウントモデル',
+    ac_h: 'コードとデータを、分ける',
+    ac_p: '多くのチェーン（Ethereum型）は、プログラムが<b>自分の中に</b>データを抱えます。Solanaは違い、<b>プログラム（コード）</b>と<b>アカウント（データ）</b>を分け、プログラムは<b>外の口座を触りに行く</b>。この一見地味な違いが、後の速さ（並列実行）の土台になります。送金を実行して、動きを比べましょう。',
+    ac_svgtitle: 'アカウントモデルの対比',
+    ac_eth_lab: 'Ethereum型（コードもデータも1つの箱の中）',
+    ac_eth_contract: '⚙ コントラクト（コード）',
+    ac_eth_youbal: 'あなたの残高',
+    ac_eth_peerbal: '相手の残高',
+    ac_sol_lab: 'Solana型（コードとデータが別々の口座）',
+    ac_sol_prog: '⚙ プログラム',
+    ac_sol_prog_sub: 'コードのみ（データは持たない）',
+    ac_sol_youbal: 'あなたの残高',
+    ac_sol_peerbal: '相手の残高',
+    ac_sol_write1: '−10 を書く',
+    ac_sol_write2: '+10 を書く',
+    ac_note: 'プログラムが「どのデータ口座を触るか」を毎回はっきり示すのがSolana流。だからネットワークは「重ならない処理」を見分けて同時に走らせられます（→ SCENE6 Sealevel）。ステークアカウント（SCENE8）も、この「自分のデータ口座」の一種です。',
+    ac_btn0: '送金を実行 ▶',
+    ac_btn1: 'Solana では？ ▶',
+    ac_reset: 'リセット',
+    ac_hint0: '「送金を実行」を押すと、まずEthereum型（中で完結）、次にSolana型（外の口座を触りに行く）の動きが見えます。あなたが相手に 10 送る例です。',
+    ac_hint1: 'Ethereum型：あなた −10 / 相手 +10 の書き換えが、すべてコントラクトの「箱の中」で起きます。残高データが内部にあるため、外からはどのデータを触ったか見えにくく、別の処理は基本的に順番待ちです。',
+    ac_hint2: 'Solana型：プログラム（コード）は、外にある2つの残高口座を「触る」と前もって宣言し、あなたの残高に −10、相手の残高に +10 を書き込みます。どの口座を使うか明確なので、無関係な他の送金は同時に処理できます。',
+
+    /* SCENE 2: SOL & fees */
+    fee_tag: 'SCENE 2 / 基本：SOL と手数料',
+    fee_h: 'なぜ、こんなに安い？',
+    fee_p: 'Solanaの通貨<b>SOL</b>には2つの役目があります。<b>手数料の支払い</b>と、<b>ステーキング</b>（後のシーンで詳しく）。手数料は1取引あたり<b>0.000005 SOL</b>に固定。混雑しても変わりません。これがどれくらい安いか見てみましょう。',
+    fee_k1: '基本手数料（1取引）',
+    fee_k2: 'SOL価格を仮定',
+    fee_k3: '1取引のコスト',
+    fee_k4: 'この金額で送れる回数',
+    fee_price_lab: 'SOL価格',
+    fee_count: '約 {n} 回 / $1',
+    fee_callout: '基本手数料はプロトコルに固定されていて、Ethereumのように混雑で急騰しません。だから少額決済や高頻度の取引が成り立ちます。',
+    fee_note: '基本手数料は50%がリーダー（バリデータ）に入り、50%は焼却（バーン）されます。急ぎのときは少額の優先手数料を足せますが、通常は1セント未満。他のトークンを送るときも手数料はSOLで払います。',
+
+    /* SCENE 3: local fee markets */
+    lf_tag: 'SCENE 3 / 基本：ローカル手数料マーケット',
+    lf_h: '混雑は「巻き込まない」',
+    lf_p: '人気アプリに取引が殺到して混雑したとき、多くのチェーンは<b>全体の手数料が上がり</b>、無関係なあなたの送金まで高くなります。Solanaは混雑を<b>その口座の周りだけに閉じ込める</b>（ローカル手数料マーケット）。「混雑を発生させる」を押して比べましょう。',
+    lf_svgtitle: 'ローカル手数料マーケット',
+    lf_eth_lab: '一般的なチェーン（全体で手数料が上がる）',
+    lf_sol_lab: 'Solana（混雑した口座の周りだけ上がる）',
+    lf_eth_name: '一般的なチェーン',
+    lf_sol_name: 'Solana',
+    lf_median: '中央値',
+    lf_avg: '平均',
+    lf_btn: '混雑を発生させる ▶',
+    lf_reset: 'リセット',
+    lf_note: '緑＝通常の手数料、赤＝高騰。Solanaでは混雑した口座を触る取引だけが高くなり、無関係な取引は安いまま。だから「平均」は上がっても「中央値（typicalな人が払う額）」はほとんど動きません。実際、2024年11月の高負荷期も中央値は平均の約35分の1に留まりました。',
+    lf_hint0: '平常時はどちらも全部が安い状態（緑）。「混雑を発生させる」を押すと、人気アプリ（DEX）に取引が殺到した様子になります。',
+    lf_hint1: '一般的なチェーンは全体が高騰し、中央値も平均もほぼ同じだけ跳ね上がります。Solanaは混雑した口座を触る3件だけが高騰し、残り7件は安いまま。だから「中央値」はほとんど動かず、「平均」だけが少し上がります。',
+
+    /* SCENE 4: leader schedule */
+    s1_tag: 'SCENE 4 / リーダー選出',
+    s1_h: 'ブロックを作る順番は、決まっている',
+    s1_p: 'Solanaの時間は<b>スロット</b>という単位で刻まれ、1スロットは約<b>0.4秒</b>。各スロットでリーダーがブロックを1つ作ります。リーダーは<b>4スロットごと</b>に交代し、その順番（リーダースケジュール）は<b>エポックの最初に前もって</b>、ステークの量に応じて決まっています。再生して時間を進めてみましょう。',
+    s1_strip_lab: 'リーダースケジュール（4スロット＝1人ぶん・先まで決定済み）',
+    s1_strip_note: '塗り＝生成済み ／ 枠＝これから（予定） ／ <span style="color:var(--amber)">黄＝いまここ</span>',
+    s1_svgtitle: 'リーダー選出',
+    s1_network: 'Solana ネットワーク',
+    s1_stake_lab: 'ステーク 50%',
+    s1_share_lab: '各バリデータが作ったブロックの割合',
+    s1_slot_time: 'スロット <span id="s1slot">0</span> ・ 約 <span id="s1time">0.0</span>秒',
+    s1_play: '再生 ▶',
+    s1_pause: '一時停止 ⏸',
+    s1_oneslot: '1スロット',
+    s1_reset: 'リセット',
+    s1_hint_init: '「再生 ▶」を押すと、スケジュール通りに約0.4秒ごとにブロックが作られます。',
+    s1_hint_early: '約0.4秒ごとに1ブロック。4スロットごとにリーダーが交代します。',
+    s1_hint_mid: '作られたブロックの割合が、各バリデータのステーク（A50 / B25 / C15 / D10）に近づいていきます。',
+    s1_hint_end: 'このスケジュールの最後まで来ました。実際の1エポックは約43万スロット続きます。リセットでまた最初から。',
+
+    /* SCENE 5: Gulf Stream */
+    g_tag: 'SCENE 5 / なぜ速い？ Gulf Stream',
+    g_h: '「行列」がない、という速さ',
+    g_p: '多くのチェーンでは、送られた取引は共有の<b>待合室（メモリプール）</b>にいったん溜まり、リーダーがそこから拾います。Solanaは違います。順番が前もって決まっているので、取引を<b>今のリーダーと、これから順番が来る数人のリーダーへ前もって</b>配れる。待合室そのものが要りません（Gulf Stream）。比べてみましょう。',
+    g_svgtitle: 'Gulf Stream',
+    g_typical: '一般的なチェーン',
+    g_tx: '取引',
+    g_waitroom: '待合室',
+    g_mempool: 'メモリプール',
+    g_leader: 'リーダー',
+    g_wait: '混雑すると、ここで待たされる',
+    g_solana: 'Solana（Gulf Stream）',
+    g_now: '今',
+    g_next: '次',
+    g_nextnext: '次々',
+    g_forward: '待合室なし → 今後のリーダーへ前もって配る',
+    g_btn0: '取引を送ってみる ▶',
+    g_btn1: 'Solana では？ ▶',
+    g_reset: 'リセット',
+    g_more_btn: '詳しく',
+    g_more_h: 'メモリプールとの違い',
+    g_more_body: 'BitcoinやEthereumでは、送られた取引は「メモリプール」という共有の保留場所に入り、未確認のまま順番待ちします。混雑すると数万件が滞留し、手数料の高い取引が優先されて、遅延や手数料高騰が起きます。Solanaは保留場所を持たず、リーダーの順番が前もって分かることを利用して、取引を今後のリーダーへ直接転送します。リーダーは負荷時に取引を先回りで処理し、無効なものを捨てることもできます。',
+    g_note: 'リーダーの順番が前もって決まっている（SCENE4）からこそ、今後の担当者たちに先回りして渡せます。これがSolanaの低遅延を支える仕組みの一つ。Alpenglowでもリーダー順が事前に決まる前提は保たれるため、この「メモリプール無し」の考え方は維持されます。',
+    g_hint0: '「取引を送ってみる」を押すと、まず一般的なチェーンの動きが見えます。',
+    g_hint1: '一般的なチェーンでは、取引はまず共有の待合室（メモリプール）に入り、リーダーがそこから取り出します。混雑すると、ここで順番待ちが起きます。',
+    g_hint2: 'Solanaは今後のリーダーの順番が前もって分かるので、取引を待合室に置かず、今の担当者とこれから順番が来る数人へ前もって配ります。行列が無いぶん、混雑に強く速いのです。',
+
+    /* SCENE 6: Sealevel */
+    sl_tag: 'SCENE 6 / なぜ速い？ Sealevel',
+    sl_h: '同時に「さばく」、という速さ',
+    sl_p: '多くのチェーンは取引を<b>1件ずつ順番に</b>処理します（直列）。Solanaは違います。各取引が「どの口座を触るか」を<b>前もって申告</b>するので、<b>重ならない取引は同時に</b>処理できる（並列＝Sealevel）。両方を走らせて、処理時間を比べましょう。',
+    sl_svgtitle: 'Sealevel 並列実行',
+    sl_serial_lab: '一般的なチェーン（直列・1レーン）',
+    sl_parallel_lab: 'Solana（並列・4レーン＝CPUコア）',
+    sl_btn0: '8件の取引を処理 ▶',
+    sl_btn1: 'もう一度 ▶',
+    sl_reset: 'リセット',
+    sl_more_btn: '詳しく',
+    sl_more_h: '「重ならなければ同時に」の意味',
+    sl_more_body: '各取引は実行前に、読む口座・書く口座を申告します。書き込む口座が重ならない取引どうしは互いに影響しないので、別々のCPUコアで同時に実行できます。逆に同じ口座に書き込む取引は順番待ち（直列）になります。この仕組みのおかげで、関係ない処理を待たずに大量にさばけます。Alpenglowは合意のしくみを変える upgrade で、この実行エンジン（Sealevel）は残ります。',
+    sl_note: '図はイメージです。実際のコア数は数十、申告された口座の重なり方によって並列度が決まります。',
+    sl_hint0: '「8件の取引を処理」を押すと、上（直列）と下（並列）が同時にスタートします。どちらが先に終わるでしょう？',
+    sl_hint_run: '処理中… 上は1件ずつ、下は4件まとめて進みます。',
+    sl_sertime_done: '8件ぶんの時間',
+    sl_sertime_running: '（まだ続いています…）',
+    sl_partime_done: '2件ぶんの時間で完了',
+    sl_hint_done: '同じ8件でも、重ならない取引を4レーン（コア）で同時にさばけば、直列の約 1/4 の時間で終わります。これが並列実行（Sealevel）の速さです。',
+
+    /* SCENE 7: TPS comparison */
+    tps_tag: 'SCENE 7 / なぜ速い？ 速さ比べ',
+    tps_h: 'で、実際どれくらい速い？',
+    tps_p: 'Gulf Stream や Sealevel が効くと、処理速度（TPS＝1秒あたりの取引数）はどうなるのか。主要チェーンの<b>実測TPS</b>を並べます。まず予想してから、ボタンで答え合わせしてみましょう。速い＝偉いではなく、各チェーンが<b>何を優先したか</b>の違いです。',
+    tps_card_lab: '実測TPS（1秒あたりの処理件数）と、各チェーンが重視するもの',
+    tps_btn: '結果を見る ▶',
+    tps_reset: 'リセット',
+    tps_note_callout: '高いTPSと低い手数料だからこそ、<b>少額決済・高頻度取引・リアルタイムなアプリ</b>が現実的になります。一方で Bitcoin の堅牢性や Ethereum の分散性は、別の価値。用途によって"良い設計"は変わります。',
+    tps_note: '出典：Chainspect 実測値（2026年6月初旬時点）。TPSは時期・計測法で変動し、瞬間値は理論上限を上回ることもあります。Solana は理論最大65,000・最大実測約6,300で、実測平均（数百〜千超）とは差があります。Base は Ethereum の Layer 2。平均手数料の目安：Solana 約$0.00025、Ethereum 約$2.9、BNB 約$0.13。',
+    tps_hint0: 'どのチェーンが一番速いか予想できますか？「結果を見る」で棒が伸びて答えが出ます。',
+    tps_hint1: 'Solana が実測でも頭ひとつ抜けています。ただしこれは「速さを優先した設計」の結果。Bitcoin や Ethereum は別の価値（堅牢性・分散性）を優先しています。',
+    tps_tag_throughput: 'スループット重視',
+    tps_tag_l2: 'EthereumのL2',
+    tps_tag_decentral: '分散性・安全性重視',
+    tps_tag_robust: '堅牢性重視',
+
+    /* SCENE 8: stake account lifecycle intro */
+    s2_tag: 'SCENE 8 / ステークアカウントの正体',
+    s2_h: '預け入れ → 委任 → 解除 → 引き出し',
+    s2_p: 'ステーキングは、SOLを<b>自分の</b>ステークアカウントに預け入れ（deposit）、それをバリデータに委任（delegate）すること。所有権は移らないので、いつでも解除して引き出せます。一周ぶん、順に動かしてみましょう。',
+    s2_svgtitle: '預け入れと委任',
+    s2_wallet: 'ウォレット',
+    s2_wallet_sub: 'あなたの SOL',
+    s2_lab1: '① 預け入れ deposit',
+    s2_lab1b: '所有権はあなたのまま',
+    s2_stakeacct: 'ステークアカウント',
+    s2_stakeacct_sub: 'あなたが管理する口座',
+    s2_lab2: '② 委任 delegate',
+    s2_lab2b: '所有権は移らない',
+    s2_validator: 'バリデータ',
+    s2_btn0: '① 預け入れる ▶',
+    s2_btn1: '② 委任する ▶',
+    s2_btn2: '③ 解除する ▶',
+    s2_btn3: '④ 引き出す ▶',
+    s2_reset: 'リセット',
+    s2_note: '紫＝あなたの管理下 / 青緑＝バリデータ。バリデータがSOLを預かるわけではありません。',
+    s2_hint_init: 'まず「① 預け入れる」を押してみましょう。',
+    s2_hint1: '① 預け入れ完了。SOLは「あなたのウォレット」から「あなたのステークアカウント」へ移っただけ。まだバリデータには関係していません。',
+    s2_hint2: '② 委任完了。ステークアカウントを「バリデータ」に向けただけで、SOLそのものは渡していません。',
+    s2_hint3: '③ 解除。バリデータへの委任を外しました。次のエポックを過ぎると引き出せるようになります。',
+    s2_hint4: '④ 引き出し完了。SOLがウォレットに戻りました。預け入れ → 委任 → 解除 → 引き出しの間、ずっとあなたのものでした。',
+
+    /* SCENE 9: delegation effect */
+    s3_tag: 'SCENE 9 / 委任の効き目',
+    s3_h: '委任の量で、選ばれやすさが変わる',
+    s3_p: 'あなたが一番小さいバリデータ <b>D</b> に委任すると、その量に応じて D が<b>リーダーになる確率</b>が上がります。スライダーを動かしてみましょう。',
+    s3_svgtitle: '委任の効き目',
+    s3_network: 'Solana ネットワーク',
+    s3_you: 'あなた',
+    s3_you_amt: '委任 {n} SOL',
+    s3_metric: 'D がリーダーになる確率',
+    s3_delta0: '委任なしの状態',
+    s3_delta: '委任なしの 10.0% から +{n}ポイント',
+    s3_slider: 'D に委任',
+    s3_note: '※ SOLは自分のステークアカウントに預け入れ（deposit）てあるだけ。委任（delegate）してもバリデータには渡らず、いつでも引き出せます。',
+
+    /* SCENE 10: stake account lifecycle */
+    s4_tag: 'SCENE 10 / ステークアカウントでできること',
+    s4_h: 'あなたは、ずっとコントロールを握る',
+    s4_p: '委任・解除・引き出し・委任先の変更。ステークアカウントはあなたが操作します。ただし変更は<b>次のエポック</b>を待って反映されます。流れがわかりにくければ、まず「デモ再生」で全体を眺めてみてください。',
+    s4_pill_inactive: '未委任',
+    s4_pill_activating: '有効化中',
+    s4_pill_active: '委任中',
+    s4_pill_deactivating: '解除中',
+    s4_pill_back: '→ 未委任へ戻る',
+    s4_card_title: 'ステークアカウント',
+    s4_k_val: '委任先',
+    s4_k_bal: '元本',
+    s4_k_rew: 'たまった報酬',
+    s4_k_ep: '現在のエポック',
+    s4_sel_lab: '委任先を選ぶ',
+    s4_val_a: 'バリデータA',
+    s4_val_b: 'バリデータB',
+    s4_val_c: 'バリデータC',
+    s4_next: '次のエポックへ ▶',
+    s4_demo: 'デモ再生 ▶',
+    s4_demo_stop: '停止',
+    s4_reset: 'リセット',
+    s4_none: 'なし',
+    s4_lab_inactive: '未委任',
+    s4_lab_activating: '有効化中',
+    s4_lab_active: '委任中',
+    s4_lab_deactivating: '解除中',
+    s4_lab_withdrawn: '引き出し済み',
+    s4_btn_delegate: '委任する',
+    s4_btn_withdraw: '引き出す',
+    s4_btn_change: '委任先を変える',
+    s4_btn_deactivate: '解除する',
+    s4_btn_redeposit: 'もう一度預け入れ',
+    s4_hint_init: 'ウォレットからSOLを預け入れたステークアカウントです。まず「委任する」を押してみましょう。',
+    s4_hint_delegate: '委任しました。次のエポックで「委任中」になり、報酬が貯まり始めます。「次のエポックへ ▶」を押してみましょう。',
+    s4_hint_redelegate: '委任先を変えるには、まず解除します。次のエポックを進めてください。',
+    s4_hint_deact: '解除しました。次のエポックで引き出せるようになります。',
+    s4_hint_withdraw: 'ウォレットに {n} SOL を引き出しました（元本＋報酬）。SOLはずっとあなたのものでした。「もう一度預け入れ」でまた委任もできます。',
+    s4_hint_redeposit: 'もう一度 100 SOL を預け入れました。また委任できます。',
+    s4_hint_done: '引き出し済みです。「もう一度預け入れ」か「リセット」でまた試せます。',
+    s4_hint_active: '有効化が完了して「委任中」に。ここから報酬が自動で貯まっていきます。',
+    s4_hint_redeleg_done: '解除が完了。別のバリデータを選んで、もう一度「委任する」を押せば委任先を変えられます。',
+    s4_hint_deact_done: '解除が完了。これで「引き出す」ができます（元本＋報酬）。',
+    s4_hint_accrue: 'エポックが進み、報酬が {n} SOL に。委任中はこうして自動で増えます。',
+    s4_hint_inactive: '未委任のあいだは報酬は増えません。委任すると貯まり始めます。',
+    s4_demo_hint: 'デモ再生：自動で一連の流れを進めます。',
+
+    /* SCENE 11: commitment levels */
+    s5_tag: 'SCENE 11 / processed → confirmed → finalized',
+    s5_h: '「確定」までの3段階',
+    s5_p: '作られたブロックは、いきなり確定はしません。まず <b>processed</b>（処理済み）、2/3超の賛成で <b>confirmed</b>（確認済み）、さらにその上に <b>31個</b>のブロックが積まれて <b>finalized</b>（確定・不可逆）になります。順に進めましょう。',
+    s5_svgtitle: '確認レベル',
+    s5_block: 'ブロック',
+    s5_block_processed: 'processed',
+    s5_block_confirmed: 'confirmed',
+    s5_block_finalized: '確定 ✓',
+    s5_sub_processed: 'processed / 処理済み',
+    s5_sub_confirmed: 'confirmed / 確認済み',
+    s5_sub_finalized: 'finalized / 確定',
+    s5_vote_lab: '賛成したステーク',
+    s5_vote_line: '% <span style="color:var(--text3)">/ 確定ライン 67%</span>',
+    s5_stack_lab: '上に積まれた確認済みブロック',
+    s5_btn_vote: '投票を集める ▶',
+    s5_btn_stack: '上にブロックを積む ▶',
+    s5_reset: 'リセット',
+    s5_hint_init: 'ブロックは作られた直後は processed（処理済み）。まだ覆る可能性があります。「投票を集める ▶」で賛成を集めましょう。',
+    s5_hint_vote: '{v} が投票（ステーク {p}%）。賛成は合計 {sum}%。確定ライン（67%）まで投票を集めましょう。',
+    s5_hint_confirmed: '賛成が2/3を超えて confirmed（確認済み）に。実用上はここでほぼ確定とみなせます（楽観的確認）。次は finalized までブロックを積みます。',
+    s5_hint_stacking: 'confirmed されたブロックの上に、後続の確認済みブロックが積み上がっています…',
+    s5_hint_finalized: 'confirmed の上に31個のブロックが積まれて finalized（確定）に。最大ロックアウトに達し、もう誰にも覆せません。',
+
+    /* SCENE 12: rewards / commission */
+    s6_tag: 'SCENE 12 / 報酬・コミッション',
+    s6_h: '「0%」の本当の意味',
+    s6_p: 'コミッションは報酬<b>全体</b>にかかるのではありません。報酬は<b>インフレ報酬</b>と<b>MEV</b>などに分かれ、<b>それぞれ別のコミッション率</b>を設定できます。だから「コミッション0%」の多くは<b>インフレが0%という意味</b>で、MEVからは別途取っていることがよくあります。2つを別々に動かしてみましょう。',
+    s6_infl_lab: 'インフレ報酬 0.80 SOL の分配',
+    s6_mev_lab: 'MEV報酬 0.20 SOL の分配',
+    s6_you: 'あなた',
+    s6_validator: 'バリデータ',
+    s6_total_lab: 'あなたが実際に受け取る合計',
+    s6_infl_comm: 'インフレ手数料',
+    s6_mev_comm: 'MEV手数料',
+    s6_note_hidden: 'これが「隠れたコミッション」。インフレ手数料0%で『無料』に見えても、MEVから{n}%取られ、あなたの受取は {t} SOLに減っています。StakeWizでMEVコミッションを必ず確認しましょう。',
+    s6_note_zero: 'インフレもMEVも0%。報酬がまるごとあなたに渡る、委任者には最も手厚い設定です（実在しますが、運営の持続性と稼働率は要確認）。',
+    s6_note_low: 'どちらも控えめ。委任者に手厚い設定です。受取は合計 {t} SOL。',
+    s6_note_high: '手数料が高め。受取は合計 {t} SOL まで下がっています。インフレとMEVは別々にかかる点に注意。',
+    s6_note: '前提：報酬合計1.0 SOLのうちインフレ0.8・MEV0.2の例（割合は時期で変動）。「インフレ0% / MEV50%」のような組み合わせが実在します。表示コミッションがインフレ分だけを指すことが多い点に注意。実質利回りは両方の手数料に加え、稼働率でも変わります。',
+
+    /* SCENE 13: validator break-even */
+    s7_tag: '応用編 ① / バリデータの損益分岐',
+    s7_h: '投票コストを、ステークで超えられるか',
+    s7_p: 'SCENE12で見たとおり、バリデータの収入は<b>インフレ報酬のコミッション</b>と<b>MEVのコミッション＋ブロック報酬</b>に分かれます。だからインフレ手数料が0%でも、MEV・ブロック報酬でコストを賄えれば黒字。ステークを動かして損益分岐を探りましょう。',
+    s7_k_revc: 'インフレ報酬のコミッション',
+    s7_k_revm: 'MEVコミッション＋ブロック報酬',
+    s7_k_cost: '年間コスト（投票＋運営）',
+    s7_rev_vs_cost: '収益（インフレ＋MEV等） vs コスト',
+    s7_rev: '収益',
+    s7_cost: 'コスト',
+    s7_leg_infl: 'インフレ・コミッション',
+    s7_leg_mev: 'MEV等',
+    s7_net_lab: '年間の純損益',
+    s7_stake_lab: '委任ステーク',
+    s7_comm_lab: 'インフレ手数料',
+    s7_delta: '損益分岐は約 {n} SOL の委任（このコミッション率の場合）',
+    s7_note_be0: 'インフレ手数料0%でも黒字。MEVコミッションとブロック報酬だけでコストを上回っています。これがStakeWizで「0%」バリデータが多い理由です（インフレ報酬は委任者に渡し、MEV等で稼ぐ戦略）。',
+    s7_note_be: '黒字。インフレ・コミッションとMEV等の合計がコストを上回っています。',
+    s7_note_loss: '赤字。委任が足りず、毎エポックSOLを溶かす状態です。この固定費（投票コスト）が、バリデータ数が2,560（2023年）から約770（2026年）まで減った主因でした。',
+    s7_note: '前提：ステーキング利回り約6.5%、投票コスト約400 SOL/年（理論上限。スロットのずれで実測は約300〜350 SOL）、運営コスト約80 SOL/年（≒1.2万ドル）。MEV・ブロック報酬は委任ステークに概ね比例する簡略モデルで概算。自己ステーク分は除外。実際はクライアントやネットワーク活動で大きく変動します。',
+    s7_alpenglow: '⚡ Alpenglow後の変化：スロットごとの投票手数料が廃止され、固定の VAT（Validator Admission Ticket）に。1エポックの投票コストが約2.16 SOL → 約1.6 SOL と<b style="color:var(--text)">およそ2割下がります</b>。小規模バリデータの損益分岐が下がり、参入しやすくなります。',
+
+    /* SCENE 14: DAT NAV flywheel */
+    s8_tag: '応用編 ② / DAT の NAV フライホイール',
+    s8_h: '同じ「増資」が、味方にも敵にもなる',
+    s8_p: 'DAT企業は株を発行してSOLを買い増します。株価が中身（NAV）より高い<b>プレミアム（mNAV &gt; 1）</b>なら増資で<b>1株あたりSOLが増える</b>（accretive）。ただし<b>増資のたびに株の供給が増え、mNAVは自然に下がります</b>。やりすぎるとプレミアムが消え、mNAVが1を割って逆回転（希薄化）に。何度か増資して確かめましょう。',
+    s8_k_hold: '保有SOL',
+    s8_k_shares: '発行済み株数',
+    s8_k_pps: '1株あたりSOL',
+    s8_k_mult: '初期からの倍率',
+    s8_mnav_lab: 'いまの mNAV（株価 ÷ 中身）',
+    s8_slider_note: '市況スライダー（外部環境）＋ 増資による自動低下 の合算',
+    s8_market_lab: '市況：弱気 ↔ 強気',
+    s8_raise: '20%増資してSOLを買う ▶',
+    s8_demo: 'デモ再生 ▶',
+    s8_demo_stop: '停止',
+    s8_reset: 'リセット',
+    s8_note: '前提：初期 保有100万SOL・1,000万株（1株=0.1 SOL）、1回の増資で株数を20%発行し全額SOL購入する単純モデル。増資ごとにmNAVが約0.35下がるのは「供給増でプレミアムが削れる」圧力の簡略表現で、実際の下げ幅は市場が決めます。SOL価格は両辺で相殺されるため1株あたりSOLの増減には影響しません。',
+    s8_note_premium: 'プレミアム（mNAV>1）{d}。いま増資すると1株あたりSOLが増えます（accretive）。ただし押すたびにmNAVは下がっていきます。',
+    s8_note_discount: 'ディスカウント（mNAV<1）{d}。いま増資すると1株あたりSOLは減り、希薄化に。フライホイールが逆回転しています。',
+    s8_note_par: 'ちょうど mNAV=1。増資しても1株あたりSOLは変わりません（ここが境目）。',
+    s8_dropnote: '（市況 {m}x から増資ぶん −{d}）',
+    s8_log_row: '<b style="color:var(--text)">#{round}</b> mNAV {m}x で増資 → 1株 {before} → <b style="color:{color}">{after}</b> SOL（{sign}{pct}%）',
+
+  }
+};
+function t(key, params){
+  const d = I18N[lang] || I18N.en;
+  let s = (key in d) ? d[key] : ((I18N.en[key] !== undefined) ? I18N.en[key] : key);
+  if (params) for (const p in params) s = s.split('{'+p+'}').join(params[p]);
+  return s;
+}
+function applyLang(){
+  document.documentElement.lang = lang;
+  // data-i18n: textContent, data-i18n-html: innerHTML
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.getAttribute('data-i18n');
+    el.textContent = t(k);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>{
+    const k = el.getAttribute('data-i18n-html');
+    el.innerHTML = t(k);
+  });
+  const lb = document.getElementById('langToggle'); if(lb) lb.textContent = t('langBtn');
+  const br = document.getElementById('brand'); if(br) br.innerHTML = t('brand');
+}
+function toggleLang(){
+  lang = (lang === 'en') ? 'ja' : 'en';
+  applyLang();
+  if (typeof reRenderDynamic === 'function') reRenderDynamic();
+  if (typeof show === 'function') show(cur);
+}
+// シーン側の動的テキストを現在の言語で再生成するフック（各シーンのReset等を呼ぶ）
+function reRenderDynamic(){
+  try{
+    if(typeof acReset==='function') acReset();
+    if(typeof feeUpd==='function') feeUpd();
+    if(typeof lfReset==='function') lfReset();
+    if(typeof s1Reset==='function') s1Reset();
+    if(typeof gReset==='function') gReset();
+    if(typeof slReset==='function') slReset();
+    if(typeof tpsReset==='function') tpsReset();
+    if(typeof s2Reset==='function') s2Reset();
+    if(typeof s3Upd==='function') s3Upd(+document.getElementById('s3amt').value);
+    if(typeof s4Render==='function'){ if(typeof S4!=='undefined'&&S4){S4.hint=t('s4_hint_init');} s4Reset(); }
+    if(typeof s5Reset==='function') s5Reset();
+    if(typeof s6Upd==='function') s6Upd();
+    if(typeof s7Upd==='function') s7Upd();
+    if(typeof s8Reset==='function') s8Reset();
+  }catch(e){}
+}
+
+/* ---------- navigation ---------- */
+const N=15; let cur=0;
+const dotsEl=document.getElementById('dots');
+for(let i=0;i<N;i++){const d=document.createElement('span');d.className='dot';dotsEl.appendChild(d);}
+function show(i){
+  cur=Math.max(0,Math.min(N-1,i));
+  document.querySelectorAll('.scene').forEach((s,idx)=>s.classList.toggle('active',idx===cur));
+  document.querySelectorAll('.dot').forEach((d,idx)=>d.classList.toggle('on',idx===cur));
+  document.getElementById('navPrev').disabled=(cur===0);
+  document.getElementById('navNext').style.visibility=(cur===N-1)?'hidden':'visible';
+  document.getElementById('navCount').textContent=(cur+1)+' / '+N;
+  window.scrollTo(0,0);
+}
+function next(){show(cur+1);} function prev(){show(cur-1);}
+
+/* ---------- scene 0a: account model ---------- */
+let acStage=0;
+function acStep(){
+  if(acStage===0){
+    acStage=1;
+    document.getElementById('ethBox').setAttribute('stroke','var(--amber)');
+    document.getElementById('ethBox').setAttribute('stroke-width','2');
+    document.getElementById('ethABal').textContent='90';
+    document.getElementById('ethBBal').textContent='110';
+    document.getElementById('acHint').textContent=t('ac_hint1');
+    document.getElementById('acBtn').textContent=t('ac_btn1');
+  } else if(acStage===1){
+    acStage=2;
+    document.getElementById('solL1').setAttribute('opacity','1');
+    document.getElementById('solL2').setAttribute('opacity','1');
+    document.getElementById('solLab1').setAttribute('opacity','1');
+    document.getElementById('solLab2').setAttribute('opacity','1');
+    document.getElementById('solProg').setAttribute('stroke-width','2');
+    document.getElementById('solA').setAttribute('stroke-width','2');
+    document.getElementById('solB').setAttribute('stroke-width','2');
+    // 残高が実際に動く（あなた100→90、相手100→110）
+    document.getElementById('solABal').textContent='90';
+    document.getElementById('solBBal').textContent='110';
+    document.getElementById('acHint').textContent=t('ac_hint2');
+    document.getElementById('acBtn').disabled=true;
+  }
+}
+function acReset(){
+  acStage=0;
+  document.getElementById('ethBox').setAttribute('stroke','var(--line2)');
+  document.getElementById('ethBox').setAttribute('stroke-width','1');
+  document.getElementById('ethABal').textContent='100';
+  document.getElementById('ethBBal').textContent='100';
+  document.getElementById('solL1').setAttribute('opacity','0');
+  document.getElementById('solL2').setAttribute('opacity','0');
+  document.getElementById('solLab1').setAttribute('opacity','0');
+  document.getElementById('solLab2').setAttribute('opacity','0');
+  document.getElementById('solProg').setAttribute('stroke-width','1');
+  document.getElementById('solA').setAttribute('stroke-width','.8');
+  document.getElementById('solB').setAttribute('stroke-width','.8');
+  document.getElementById('solABal').textContent='100';
+  document.getElementById('solBBal').textContent='100';
+  document.getElementById('acBtn').disabled=false;
+  document.getElementById('acBtn').textContent=t('ac_btn0');
+  document.getElementById('acHint').textContent=t('ac_hint0');
+}
+
+/* ---------- scene 0b: SOL & fees ---------- */
+function feeUpd(){
+  const price=+document.getElementById('feeSlider').value;
+  const usd=0.000005*price;
+  const perDollar=Math.round(1/usd);
+  document.getElementById('feePrice').textContent='$'+price;
+  document.getElementById('feeOut').textContent='$'+price;
+  document.getElementById('feeUsd').textContent='$'+usd.toFixed(5);
+  document.getElementById('feeCount').textContent=t('fee_count',{n:perDollar.toLocaleString()});
+}
+
+/* ---------- scene 0c: local fee markets ---------- */
+// セル10個。Solana側はインデックス0-2が「混雑したDEX口座」を触る取引、残りは無関係。
+const LF_N=10, LF_HOT=[0,1,2];
+function lfBuild(){
+  ['eth','sol'].forEach(side=>{
+    const g=document.getElementById(side+'Cells');g.innerHTML='';
+    const baseY=(side==='eth')?40:160;
+    for(let i=0;i<LF_N;i++){
+      const ns='http://www.w3.org/2000/svg';
+      const x=30+i*55;
+      const r=document.createElementNS(ns,'rect');
+      r.setAttribute('id',side+'C'+i);
+      r.setAttribute('x',x);r.setAttribute('y',baseY);r.setAttribute('width',44);r.setAttribute('height',46);
+      r.setAttribute('rx',8);r.setAttribute('fill','var(--teal-bg)');r.setAttribute('stroke','var(--teal)');r.setAttribute('stroke-width','.8');
+      g.appendChild(r);
+      const t=document.createElementNS(ns,'text');
+      t.setAttribute('id',side+'T'+i);t.setAttribute('x',x+22);t.setAttribute('y',baseY+28);
+      t.setAttribute('text-anchor','middle');t.setAttribute('fill','var(--text2)');t.setAttribute('font-size','10');t.setAttribute('font-family','DM Mono');
+      t.textContent='¢';
+      g.appendChild(t);
+    }
+  });
+}
+function lfStep(){
+  // Ethereum：全セルが高騰（赤）
+  for(let i=0;i<LF_N;i++){
+    const r=document.getElementById('ethC'+i),t=document.getElementById('ethT'+i);
+    r.setAttribute('fill','var(--amber-bg)');r.setAttribute('stroke','var(--amber)');
+    t.setAttribute('fill','var(--amber)');t.textContent='$$';
+  }
+  // Solana：混雑口座（HOT）だけ高騰、ほかは通常のまま
+  for(let i=0;i<LF_N;i++){
+    const r=document.getElementById('solC'+i),t=document.getElementById('solT'+i);
+    if(LF_HOT.includes(i)){r.setAttribute('fill','var(--amber-bg)');r.setAttribute('stroke','var(--amber)');t.setAttribute('fill','var(--amber)');t.textContent='$$';}
+  }
+  // 数値（中央値・平均）。値は説明用の簡略例。
+  document.getElementById('ethMed').textContent='$1.80';
+  document.getElementById('ethAvg').textContent='$1.95';
+  document.getElementById('solMed').textContent='$0.0008';
+  document.getElementById('solAvg').textContent='$0.06';
+  document.getElementById('lfHint').textContent=t('lf_hint1');
+  document.getElementById('lfBtn').disabled=true;
+}
+function lfReset(){
+  lfBuild();
+  document.getElementById('ethMed').textContent='$0.0010';
+  document.getElementById('ethAvg').textContent='$0.0010';
+  document.getElementById('solMed').textContent='$0.0008';
+  document.getElementById('solAvg').textContent='$0.0008';
+  document.getElementById('lfBtn').disabled=false;
+  document.getElementById('lfHint').textContent=t('lf_hint0');
+}
+lfBuild();
+
+/* ---------- scene 1: leader schedule ---------- */
+const s1stakes={A:50,B:25,C:15,D:10}; const S1NWIN=12,S1SPW=4;
+let s1sched=[],s1slot=0,s1blocks={A:0,B:0,C:0,D:0},s1timer=null;
+function s1Pick(){const r=Math.random()*100;let a=0;for(const k of['A','B','C','D']){a+=s1stakes[k];if(r<a)return k;}return 'D';}
+function s1Gen(){s1sched=[];for(let i=0;i<S1NWIN;i++)s1sched.push(s1Pick());}
+function s1Strip(){
+  const box=document.getElementById('s1strip');box.innerHTML='';
+  for(let w=0;w<S1NWIN;w++){
+    const g=document.createElement('div');g.style.cssText='flex:none;display:flex;flex-direction:column;align-items:center;gap:4px';
+    const lab=document.createElement('div');lab.textContent=s1sched[w];lab.style.cssText='font-size:11px;color:var(--text2);font-family:DM Mono';
+    const cells=document.createElement('div');cells.style.cssText='display:flex;gap:2px';
+    for(let j=0;j<S1SPW;j++){
+      const gi=w*S1SPW+j;const c=document.createElement('div');let st;
+      if(gi<s1slot)st='background:var(--teal);';
+      else if(gi===s1slot)st='background:var(--amber);';
+      else st='background:transparent;border:.5px solid var(--line2);';
+      c.style.cssText='width:13px;height:18px;border-radius:3px;'+st;cells.appendChild(c);
+    }
+    g.appendChild(lab);g.appendChild(cells);box.appendChild(g);
+  }
+}
+function s1Glow(){const c2=(s1slot<S1NWIN*S1SPW)?s1sched[Math.floor(s1slot/S1SPW)]:null;['A','B','C','D'].forEach(v=>{const c=document.querySelector('#s1'+v+' circle');const on=(v===c2);c.setAttribute('fill',on?'var(--amber-bg)':'var(--teal-bg)');c.setAttribute('stroke',on?'var(--amber)':'var(--teal)');});}
+function s1Tick(){
+  if(s1slot>=S1NWIN*S1SPW){s1StopPlay();document.getElementById('s1hint').textContent=t('s1_hint_end');return;}
+  const k=s1sched[Math.floor(s1slot/S1SPW)];s1blocks[k]++;s1slot++;
+  const h=document.getElementById('s1h'+k);if(h&&h.animate){h.animate([{opacity:.55,transform:'scale(1)'},{opacity:0,transform:'scale(1.6)'}],{duration:350,easing:'ease-out'});}
+  s1Strip();s1Glow();
+  const tot=s1slot;
+  ['A','B','C','D'].forEach(v=>{const pc=tot?Math.round(s1blocks[v]/tot*100):0;document.getElementById('s1bar'+v).style.width=pc+'%';document.getElementById('s1cnt'+v).textContent=pc+'%';});
+  document.getElementById('s1slot').textContent=s1slot;
+  document.getElementById('s1time').textContent=(s1slot*0.4).toFixed(1);
+  document.getElementById('s1hint').textContent=(s1slot<8)?t('s1_hint_early'):t('s1_hint_mid');
+}
+function s1Play(b){if(s1timer){s1StopPlay();}else{if(s1slot>=S1NWIN*S1SPW)s1Reset();s1timer=setInterval(s1Tick,400);b.textContent=t('s1_pause');}}
+function s1StopPlay(){if(s1timer){clearInterval(s1timer);s1timer=null;}const b=document.getElementById('s1play');if(b)b.textContent=t('s1_play');}
+function s1Reset(){s1StopPlay();s1Gen();s1slot=0;s1blocks={A:0,B:0,C:0,D:0};s1Strip();s1Glow();['A','B','C','D'].forEach(v=>{document.getElementById('s1bar'+v).style.width='0%';document.getElementById('s1cnt'+v).textContent='0%';});document.getElementById('s1slot').textContent='0';document.getElementById('s1time').textContent='0.0';document.getElementById('s1hint').textContent=t('s1_hint_init');}
+
+/* ---------- scene 1b: gulf stream ---------- */
+let gStage=0;
+function gStep(){
+  if(gStage===0){
+    gStage=1;
+    document.getElementById('gMem').setAttribute('stroke','var(--amber)');
+    document.getElementById('gWait').setAttribute('opacity','1');
+    document.getElementById('gA1').setAttribute('opacity','1');
+    document.getElementById('gA2').setAttribute('opacity','1');
+    document.getElementById('gHint').textContent=t('g_hint1');
+    document.getElementById('gBtn').textContent=t('g_btn1');
+  } else if(gStage===1){
+    gStage=2;
+    ['gB1','gB2','gB3'].forEach(id=>document.getElementById(id).setAttribute('opacity','1'));
+    document.getElementById('gB1').setAttribute('stroke-width','3');
+    document.getElementById('gHint').textContent=t('g_hint2');
+    document.getElementById('gBtn').disabled=true;
+  }
+}
+function gReset(){
+  gStage=0;
+  document.getElementById('gMem').setAttribute('stroke','var(--line2)');
+  document.getElementById('gWait').setAttribute('opacity','0');
+  document.getElementById('gA1').setAttribute('opacity','.5');
+  document.getElementById('gA2').setAttribute('opacity','.5');
+  ['gB1','gB2','gB3'].forEach(id=>document.getElementById(id).setAttribute('opacity','.5'));
+  document.getElementById('gB1').setAttribute('stroke-width','2');
+  document.getElementById('gBtn').disabled=false;
+  document.getElementById('gBtn').textContent=t('g_btn0');
+  document.getElementById('gHint').textContent=t('g_hint0');
+}
+function gToggle(){const m=document.getElementById('gMore');m.style.display=(m.style.display==='none')?'block':'none';}
+
+/* ---------- scene 1c: sealevel ---------- */
+const SL_N=8, SL_LANES=4, SL_UNIT=260; // 1件あたりの所要(ms相当の見かけ時間)
+let slRunning=false;
+function slMkCar(x,y,w,color){
+  const ns='http://www.w3.org/2000/svg';
+  const r=document.createElementNS(ns,'rect');
+  r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',0);r.setAttribute('height',w);
+  r.setAttribute('rx',5);r.setAttribute('fill',color);
+  return r;
+}
+function slReset(){
+  slRunning=false;
+  document.getElementById('serCars').innerHTML='';
+  document.getElementById('parCars').innerHTML='';
+  document.getElementById('serFill').setAttribute('width',0);
+  document.getElementById('serTime').textContent='—';
+  document.getElementById('parTime').textContent='—';
+  document.getElementById('slBtn').disabled=false;
+  document.getElementById('slBtn').textContent=t('sl_btn0');
+  document.getElementById('slHint').textContent=t('sl_hint0');
+}
+function slRun(){
+  if(slRunning)return;
+  slRunning=true;
+  document.getElementById('slBtn').disabled=true;
+  document.getElementById('slHint').textContent=t('sl_hint_run');
+  const ns='http://www.w3.org/2000/svg';
+  const serG=document.getElementById('serCars'),parG=document.getElementById('parCars');
+  serG.innerHTML='';parG.innerHTML='';
+  const colors=['var(--purple)','var(--teal)','var(--amber)','var(--green)'];
+  // 直列：8件を1本のバーが伸びて表現（8ユニット）
+  const serFill=document.getElementById('serFill');
+  const serTotal=SL_N*SL_UNIT;
+  const t0=performance.now();
+  function serStep(now){
+    const p=Math.min(1,(now-t0)/serTotal);
+    serFill.setAttribute('width',(p*560).toFixed(0));
+    serFill.setAttribute('opacity','.45');
+    // 件数カウンタ
+    const done=Math.floor(p*SL_N);
+    if(p<1)requestAnimationFrame(serStep);
+    else{document.getElementById('serTime').textContent=t('sl_sertime_done');}
+  }
+  requestAnimationFrame(serStep);
+  // 並列：4レーンに2件ずつ（8件）→ 2ユニットで完了
+  const laneY=[164,190,216,242];
+  const rows=2; // 各レーン2件
+  for(let lane=0;lane<SL_LANES;lane++){
+    for(let k=0;k<rows;k++){
+      const seg=document.createElementNS(ns,'rect');
+      const segW=560/rows;
+      seg.setAttribute('x',20+k*segW+2);seg.setAttribute('y',laneY[lane]+3);
+      seg.setAttribute('width',segW-4);seg.setAttribute('height',14);
+      seg.setAttribute('rx',4);seg.setAttribute('fill',colors[lane]);seg.setAttribute('opacity','0');
+      parG.appendChild(seg);
+      // k番目のユニットが終わるタイミングで点灯
+      setTimeout(()=>seg.setAttribute('opacity','.55'), (k+1)*SL_UNIT);
+    }
+  }
+  // 並列の総時間 = 2ユニット
+  setTimeout(()=>{
+    document.getElementById('parTime').textContent=t('sl_partime_done');
+    document.getElementById('serTime').textContent=t('sl_sertime_running');
+  }, rows*SL_UNIT+50);
+  // 直列の完了時にまとめ
+  setTimeout(()=>{
+    slRunning=false;
+    document.getElementById('slBtn').disabled=false;
+    document.getElementById('slBtn').textContent=t('sl_btn1');
+    document.getElementById('slHint').textContent=t('sl_hint_done');
+  }, serTotal+100);
+}
+function slToggle(){const m=document.getElementById('slMore');m.style.display=(m.style.display==='none')?'block':'none';}
+
+/* ---------- scene 2 ---------- */
+let s2step=0;
+function s2set(id,attr,val){document.getElementById(id).setAttribute(attr,val);}
+function s2Next(){
+  const b=document.getElementById('s2btn');
+  if(s2step===0){s2step=1;s2set('s2arr1','opacity','1');s2set('s2arr1','stroke','var(--purple)');s2set('s2lab1','fill','var(--purple)');s2set('s2lab1b','fill','var(--text2)');document.getElementById('s2hint').textContent=t('s2_hint1');b.textContent=t('s2_btn1');}
+  else if(s2step===1){s2step=2;s2set('s2arr2','opacity','1');s2set('s2arr2','stroke','var(--teal)');s2set('s2lab2','fill','var(--teal)');s2set('s2lab2b','fill','var(--text2)');document.getElementById('s2hint').textContent=t('s2_hint2');b.textContent=t('s2_btn2');}
+  else if(s2step===2){s2step=3;s2set('s2arr2','opacity','.3');s2set('s2arr2','stroke','var(--text3)');s2set('s2lab2','fill','var(--text3)');s2set('s2lab2b','fill','var(--text3)');document.getElementById('s2hint').textContent=t('s2_hint3');b.textContent=t('s2_btn3');}
+  else if(s2step===3){s2step=4;s2set('s2arr3','opacity','1');s2set('s2arr1','opacity','.3');s2set('s2arr1','stroke','var(--text3)');s2set('s2lab1','fill','var(--text3)');s2set('s2lab1b','fill','var(--text3)');document.getElementById('s2hint').textContent=t('s2_hint4');b.disabled=true;}
+}
+function s2Reset(){s2step=0;s2set('s2arr1','opacity','.3');s2set('s2arr1','stroke','var(--text3)');s2set('s2arr2','opacity','.3');s2set('s2arr2','stroke','var(--text3)');s2set('s2arr3','opacity','0');['s2lab1','s2lab1b','s2lab2','s2lab2b'].forEach(id=>s2set(id,'fill','var(--text3)'));const b=document.getElementById('s2btn');b.disabled=false;b.textContent=t('s2_btn0');document.getElementById('s2hint').textContent=t('s2_hint_init');}
+
+/* ---------- scene 3 ---------- */
+const s3base={A:500,B:250,C:150,D:100},s3K=1.79,s3cy=108;
+function s3Upd(v){v=+v;const dS=s3base.D+v,tot=s3base.A+s3base.B+s3base.C+dS;
+  const p={A:s3base.A/tot,B:s3base.B/tot,C:s3base.C/tot,D:dS/tot};
+  document.getElementById('s3pA').textContent=(p.A*100).toFixed(1)+'%';
+  document.getElementById('s3pB').textContent=(p.B*100).toFixed(1)+'%';
+  document.getElementById('s3pC').textContent=(p.C*100).toFixed(1)+'%';
+  document.getElementById('s3pD').textContent=(p.D*100).toFixed(1)+'%';
+  const rD=s3K*Math.sqrt(dS);document.getElementById('s3cD').setAttribute('r',rD.toFixed(1));
+  document.getElementById('s3arr').setAttribute('d','M130 112 H146 V58 H545 V'+(s3cy-rD-5).toFixed(1));
+  document.getElementById('s3arr').setAttribute('stroke-width',(1+v/100*4).toFixed(1));
+  document.getElementById('s3arr').setAttribute('opacity',v>0?'1':'.35');
+  document.getElementById('s3you').textContent=t('s3_you_amt',{n:v});
+  document.getElementById('s3out').textContent=v+' SOL';
+  document.getElementById('s3pct').textContent=(p.D*100).toFixed(1)+'%';
+  document.getElementById('s3delta').textContent=(v===0)?t('s3_delta0'):t('s3_delta',{n:(p.D*100-10).toFixed(1)});
+}
+
+/* ---------- scene 4 ---------- */
+let S4,s4demoTimer=null; const S4R=0.05;
+function s4Init(){S4={state:'inactive',epoch:0,bal:100,rew:0,val:null,intent:null,hint:''};}
+function s4ValLabel(v){return v==='A'?t('s4_val_a'):v==='B'?t('s4_val_b'):v==='C'?t('s4_val_c'):v;}
+function s4Delegate(){S4.val=document.getElementById('s4sel').value;S4.state='activating';S4.intent=null;S4.hint=t('s4_hint_delegate');s4Render();}
+function s4Deact(kind){S4.state='deactivating';S4.intent=kind;S4.hint=(kind==='redelegate')?t('s4_hint_redelegate'):t('s4_hint_deact');s4Render();}
+function s4Withdraw(){const tot=S4.bal+S4.rew;S4.hint=t('s4_hint_withdraw',{n:tot.toFixed(2)});S4.bal=0;S4.rew=0;S4.state='withdrawn';s4Render();}
+function s4Redeposit(){S4.bal=100;S4.rew=0;S4.state='inactive';S4.val=null;S4.intent=null;S4.hint=t('s4_hint_redeposit');s4Render();}
+function s4Next(){
+  if(S4.state==='withdrawn'){S4.hint=t('s4_hint_done');s4Render();return;}
+  S4.epoch++;
+  if(S4.state==='activating'){S4.state='active';S4.hint=t('s4_hint_active');}
+  else if(S4.state==='deactivating'){const re=(S4.intent==='redelegate');S4.state='inactive';S4.val=null;S4.intent=null;if(re){const c=document.getElementById('s4sel').value;document.getElementById('s4sel').value=(c==='A')?'B':'A';S4.hint=t('s4_hint_redeleg_done');}else{S4.hint=t('s4_hint_deact_done');}}
+  else if(S4.state==='active'){S4.rew+=S4R;S4.hint=t('s4_hint_accrue',{n:S4.rew.toFixed(2)});}
+  else if(S4.state==='inactive'){S4.hint=t('s4_hint_inactive');}
+  s4Render();
+}
+function s4Reset(){if(s4demoTimer){clearInterval(s4demoTimer);s4demoTimer=null;document.getElementById('s4demo').textContent=t('s4_demo');}s4Init();S4.hint=t('s4_hint_init');s4Render();}
+function s4Demo(btn){
+  if(s4demoTimer){clearInterval(s4demoTimer);s4demoTimer=null;btn.textContent=t('s4_demo');return;}
+  s4Init();S4.hint=t('s4_demo_hint');s4Render();
+  const seq=[
+    function(){document.getElementById('s4sel').value='A';s4Delegate();},
+    function(){s4Next();},function(){s4Next();},function(){s4Next();},
+    function(){s4Deact('exit');},function(){s4Next();},function(){s4Withdraw();}
+  ];
+  let i=0;btn.textContent=t('s4_demo_stop');
+  s4demoTimer=setInterval(function(){
+    if(i>=seq.length){clearInterval(s4demoTimer);s4demoTimer=null;btn.textContent=t('s4_demo');return;}
+    seq[i++]();
+  },1300);
+}
+function s4Render(){
+  const lab={inactive:t('s4_lab_inactive'),activating:t('s4_lab_activating'),active:t('s4_lab_active'),deactivating:t('s4_lab_deactivating'),withdrawn:t('s4_lab_withdrawn')};
+  ['inactive','activating','active','deactivating'].forEach(k=>document.getElementById('s4p-'+k).classList.toggle('on',S4.state===k));
+  const b=document.getElementById('s4badge');b.textContent=lab[S4.state];b.classList.toggle('act',S4.state==='active');
+  document.getElementById('s4val').textContent=S4.val?s4ValLabel(S4.val):t('s4_none');
+  document.getElementById('s4bal').textContent=S4.bal.toFixed(2)+' SOL';
+  document.getElementById('s4rew').textContent=S4.rew.toFixed(2)+' SOL';
+  document.getElementById('s4ep').textContent=S4.epoch;
+  document.getElementById('s4selRow').style.opacity=(S4.state==='inactive')?'1':'.4';
+  document.getElementById('s4sel').disabled=(S4.state!=='inactive');
+  const acts=document.getElementById('s4acts');acts.innerHTML='';
+  const mk=function(label,fn,pr){const x=document.createElement('button');x.className='btn'+(pr?' primary':'');x.textContent=label;x.onclick=fn;acts.appendChild(x);};
+  if(S4.state==='inactive'){mk(t('s4_btn_delegate'),s4Delegate,true);mk(t('s4_btn_withdraw'),s4Withdraw);}
+  else if(S4.state==='active'){mk(t('s4_btn_change'),function(){s4Deact('redelegate');});mk(t('s4_btn_deactivate'),function(){s4Deact('exit');});}
+  else if(S4.state==='withdrawn'){mk(t('s4_btn_redeposit'),s4Redeposit,true);}
+  document.getElementById('s4hint').textContent=S4.hint;
+}
+
+/* ---------- scene 5 ---------- */
+const s5stakes=[['A',50],['B',25],['C',15],['D',10]];
+let s5={level:'processed',vi:0,sum:0,stack:0,timer:null};
+function s5Render(){
+  ['processed','confirmed','finalized'].forEach(k=>document.getElementById('s5p-'+k).classList.toggle('on',s5.level===k));
+  const bl=document.getElementById('s5block'),tx=document.getElementById('s5blocktx'),sub=document.getElementById('s5blocksub');
+  if(s5.level==='processed'){bl.setAttribute('fill','var(--bg3)');bl.setAttribute('stroke','var(--line2)');tx.setAttribute('fill','var(--text)');tx.textContent=t('s5_block');sub.textContent=t('s5_sub_processed');}
+  else if(s5.level==='confirmed'){bl.setAttribute('fill','var(--amber-bg)');bl.setAttribute('stroke','var(--amber)');tx.setAttribute('fill','var(--amber)');tx.textContent=t('s5_block_confirmed');sub.textContent=t('s5_sub_confirmed');}
+  else{bl.setAttribute('fill','var(--green-bg)');bl.setAttribute('stroke','var(--green)');tx.setAttribute('fill','var(--green)');tx.textContent=t('s5_block_finalized');sub.textContent=t('s5_sub_finalized');}
+  document.getElementById('s5voteSec').style.display=(s5.level==='processed')?'block':'none';
+  document.getElementById('s5stackSec').style.display=(s5.level==='processed')?'none':'block';
+  document.getElementById('s5pct').textContent=s5.sum;
+  document.getElementById('s5fill').style.width=s5.sum+'%';
+  document.getElementById('s5k').textContent=s5.stack;
+  const acts=document.getElementById('s5acts');acts.innerHTML='';
+  const mk=function(label,fn,dis){const x=document.createElement('button');x.className='btn primary';x.textContent=label;x.onclick=fn;if(dis)x.disabled=true;acts.appendChild(x);};
+  if(s5.level==='processed')mk(t('s5_btn_vote'),s5Vote,false);
+  else if(s5.level==='confirmed')mk(t('s5_btn_stack'),s5Stack,s5.timer!=null);
+}
+function s5Vote(){
+  if(s5.level!=='processed'||s5.vi>=s5stakes.length)return;
+  const e=s5stakes[s5.vi];s5.vi++;s5.sum+=e[1];
+  document.getElementById('s5l'+e[0]).style.opacity=1;
+  document.querySelector('#s5v'+e[0]+' circle').setAttribute('stroke-width','2');
+  if(s5.sum>66.7){s5.level='confirmed';document.getElementById('s5fill').style.background='var(--amber)';document.getElementById('s5hint').textContent=t('s5_hint_confirmed');}
+  else{document.getElementById('s5hint').textContent=t('s5_hint_vote',{v:e[0],p:e[1],sum:s5.sum});}
+  s5Render();
+}
+function s5Stack(){
+  if(s5.level!=='confirmed'||s5.timer)return;
+  s5.timer=setInterval(function(){
+    s5.stack++;
+    const sq=document.createElement('div');sq.style.cssText='width:10px;height:14px;border-radius:2px;background:var(--teal)';
+    document.getElementById('s5stackBox').appendChild(sq);
+    document.getElementById('s5k').textContent=s5.stack;
+    if(s5.stack>=31){clearInterval(s5.timer);s5.timer=null;s5.level='finalized';document.getElementById('s5fill').style.background='var(--green)';document.getElementById('s5hint').textContent=t('s5_hint_finalized');s5Render();}
+  },90);
+  document.getElementById('s5hint').textContent=t('s5_hint_stacking');
+  s5Render();
+}
+function s5Reset(){
+  if(s5.timer){clearInterval(s5.timer);s5.timer=null;}
+  s5={level:'processed',vi:0,sum:0,stack:0,timer:null};
+  ['A','B','C','D'].forEach(k=>{document.getElementById('s5l'+k).style.opacity=0;document.querySelector('#s5v'+k+' circle').setAttribute('stroke-width','.8');});
+  document.getElementById('s5fill').style.background='var(--teal)';document.getElementById('s5fill').style.width='0%';document.getElementById('s5pct').textContent='0';
+  document.getElementById('s5stackBox').innerHTML='';document.getElementById('s5k').textContent='0';
+  document.getElementById('s5hint').textContent=t('s5_hint_init');
+  s5Render();
+}
+
+/* ---------- scene 6 ---------- */
+function s6Upd(){
+  const infl=0.8,mev=0.2;
+  const ic=+document.getElementById('s6icomm').value/100;
+  const mc=+document.getElementById('s6mcomm').value/100;
+  const iVal=infl*ic, iYou=infl-iVal;
+  const mVal=mev*mc, mYou=mev-mVal;
+  const youTotal=iYou+mYou;
+  document.getElementById('s6iout').textContent=(ic*100).toFixed(0)+'%';
+  document.getElementById('s6mout').textContent=(mc*100).toFixed(0)+'%';
+  document.getElementById('s6iyou').style.width=(100-ic*100)+'%';
+  document.getElementById('s6ival').style.width=(ic*100)+'%';
+  document.getElementById('s6myou').style.width=(100-mc*100)+'%';
+  document.getElementById('s6mval').style.width=(mc*100)+'%';
+  document.getElementById('s6iyouAmt').textContent=iYou.toFixed(3);
+  document.getElementById('s6ivalAmt').textContent=iVal.toFixed(3);
+  document.getElementById('s6myouAmt').textContent=mYou.toFixed(3);
+  document.getElementById('s6mvalAmt').textContent=mVal.toFixed(3);
+  document.getElementById('s6total').textContent=youTotal.toFixed(3);
+  const n=document.getElementById('s6note');
+  if(ic===0&&mc>=0.5){n.className='callout warn';n.textContent=t('s6_note_hidden',{n:(mc*100).toFixed(0),t:youTotal.toFixed(3)});}
+  else if(ic===0&&mc===0){n.className='callout ok';n.textContent=t('s6_note_zero');}
+  else if(ic<=7&&mc<=10){n.className='callout ok';n.textContent=t('s6_note_low',{t:youTotal.toFixed(3)});}
+  else{n.className='callout warn';n.textContent=t('s6_note_high',{t:youTotal.toFixed(3)});}
+}
+
+/* ---------- scene 7: validator break-even ---------- */
+function s7Upd(){
+  const stake=+document.getElementById('s7stake').value;
+  const comm=+document.getElementById('s7comm').value/100;
+  const yld=0.065,voteCost=400,opCost=80;
+  // MEV・ブロック報酬：委任ステークに概ね比例（委任者と分けないバリデータの取り分）。
+  // 0%コミッションでも約8.7万SOLで黒字化する2026年の実態に合わせ係数を設定。
+  const mevRate=0.005517;
+  const revC=stake*yld*comm;
+  const revM=stake*mevRate;
+  const rev=revC+revM,cost=voteCost+opCost,net=rev-cost;
+  // 損益分岐ステーク（このコミッション率で純損益が0になる委任量）
+  const be=cost/(yld*comm+mevRate);
+  // バーは固定スケール（絶対基準）。コストは固定費なので常に同じ幅で動かない。
+  const SCALE=5000;
+  document.getElementById('s7stakeout').textContent=stake.toLocaleString();
+  document.getElementById('s7commout').textContent=(comm*100).toFixed(0)+'%';
+  document.getElementById('s7revc').textContent=Math.round(revC).toLocaleString()+' SOL';
+  document.getElementById('s7revm').textContent=Math.round(revM).toLocaleString()+' SOL';
+  document.getElementById('s7cost').textContent=Math.round(cost).toLocaleString()+' SOL';
+  document.getElementById('s7brevc').style.width=Math.min(100,revC/SCALE*100)+'%';
+  document.getElementById('s7brevm').style.width=Math.min(100,revM/SCALE*100)+'%';
+  document.getElementById('s7bcost').style.width=Math.min(100,cost/SCALE*100)+'%';
+  const nm=document.getElementById('s7net');const ni=Math.round(net);
+  nm.textContent=(ni>=0?'+':'')+ni.toLocaleString()+' SOL';
+  nm.style.color=(net>=0)?'var(--teal)':'var(--amber)';
+  document.getElementById('s7delta').textContent=t('s7_delta',{n:Math.round(be).toLocaleString()});
+  const n=document.getElementById('s7note');
+  if(net>=0){
+    if(comm===0)n.className='callout ok',n.textContent=t('s7_note_be0');
+    else n.className='callout ok',n.textContent=t('s7_note_be');
+  } else {
+    n.className='callout warn';n.textContent=t('s7_note_loss');
+  }
+}
+
+/* ---------- scene 8: DAT NAV flywheel ---------- */
+let S8,s8DemoTimer=null;
+const S8_F=0.2, S8_PPS0=0.1, S8_DROP=0.35;
+function s8Init(){S8={hold:1000000,shares:10000000,round:0,drop:0};}
+// 実効mNAV = 市況スライダー − 増資による累積低下（下限0.3）
+function s8EffMnav(){
+  const market=+document.getElementById('s8slider').value/100;
+  return Math.max(0.3, market - S8.drop);
+}
+function s8Mnav(){
+  const m=s8EffMnav();
+  document.getElementById('s8mnav').textContent=m.toFixed(2)+'x';
+  const btn=document.getElementById('s8raise'),n=document.getElementById('s8note');
+  n.style.background='';n.style.color='';
+  const dropNote=(S8.drop>0)?t('s8_dropnote',{m:(+document.getElementById('s8slider').value/100).toFixed(2),d:S8.drop.toFixed(2)}):'';
+  if(m>1.001){btn.classList.add('primary');btn.style.background='';btn.style.borderColor='';n.className='callout ok';n.textContent=t('s8_note_premium',{d:dropNote});}
+  else if(m<0.999){btn.classList.remove('primary');btn.style.background='var(--amber-bg)';btn.style.borderColor='var(--amber)';n.className='callout warn';n.textContent=t('s8_note_discount',{d:dropNote});}
+  else{btn.classList.remove('primary');btn.style.background='var(--bg3)';btn.style.borderColor='';n.className='callout';n.style.background='var(--bg3)';n.style.color='var(--text2)';n.textContent=t('s8_note_par');}
+}
+function s8Render(){
+  const pps=S8.hold/S8.shares;
+  document.getElementById('s8hold').textContent=Math.round(S8.hold).toLocaleString();
+  document.getElementById('s8shares').textContent=Math.round(S8.shares).toLocaleString();
+  document.getElementById('s8pps').textContent=pps.toFixed(4);
+  const mult=pps/S8_PPS0;
+  document.getElementById('s8mult').textContent=mult.toFixed(2)+'x';
+  document.getElementById('s8mult').style.color=mult>=1?'var(--teal)':'var(--amber)';
+}
+function s8Raise(){
+  const m=s8EffMnav();
+  const ppsBefore=S8.hold/S8.shares;
+  const newShares=S8.shares*S8_F;
+  // 1株あたりSOL: pps_after = pps_before * (1 + f*m)/(1 + f)
+  const ppsAfter=ppsBefore*(1+S8_F*m)/(1+S8_F);
+  S8.shares+=newShares;
+  S8.hold=ppsAfter*S8.shares;
+  S8.round++;
+  S8.drop+=S8_DROP; // 増資で供給が増えるぶん、mNAVに下押し圧力
+  const up=ppsAfter>=ppsBefore;
+  const log=document.getElementById('s8log');
+  const row=document.createElement('div');
+  row.style.cssText='font-size:13px;padding:8px 11px;border-radius:9px;background:var(--bg2);border-left:3px solid '+(up?'var(--teal)':'var(--amber)')+';color:var(--text2)';
+  row.innerHTML=t('s8_log_row',{round:S8.round,m:m.toFixed(2),before:ppsBefore.toFixed(4),color:(up?'var(--teal)':'var(--amber)'),after:ppsAfter.toFixed(4),sign:(up?'+':''),pct:((ppsAfter/ppsBefore-1)*100).toFixed(1)});
+  log.insertBefore(row,log.firstChild);
+  while(log.children.length>6)log.removeChild(log.lastChild);
+  s8Render();s8Mnav();
+}
+function s8Reset(){
+  if(s8DemoTimer){clearInterval(s8DemoTimer);s8DemoTimer=null;document.getElementById('s8demo').textContent=t('s8_demo');}
+  s8Init();document.getElementById('s8log').innerHTML='';
+  document.getElementById('s8slider').value=200;
+  s8Mnav();s8Render();
+}
+function s8Demo(btn){
+  if(s8DemoTimer){clearInterval(s8DemoTimer);s8DemoTimer=null;btn.textContent=t('s8_demo');return;}
+  s8Init();document.getElementById('s8log').innerHTML='';
+  document.getElementById('s8slider').value=200; // 市況は強気のまま据え置き
+  s8Render();s8Mnav();
+  // 市況は動かさず、増資を繰り返すだけ。自動低下でやがて1を割り逆回転する。
+  let i=0;const TIMES=6;btn.textContent=t('s8_demo_stop');
+  s8DemoTimer=setInterval(function(){
+    if(i>=TIMES){clearInterval(s8DemoTimer);s8DemoTimer=null;btn.textContent=t('s8_demo');return;}
+    i++;s8Raise();
+  },1200);
+}
+
+/* ---------- scene 1d: TPS comparison ---------- */
+const TPS_DATA=[
+  {key:'sol', name:'Solana', tps:866, color:'var(--teal)', tagKey:'tps_tag_throughput'},
+  {key:'bnb', name:'BNB Chain', tps:215, color:'var(--amber)', tagKey:'tps_tag_throughput'},
+  {key:'base',name:'Base (L2)', tps:154, color:'var(--purple)', tagKey:'tps_tag_l2'},
+  {key:'eth', name:'Ethereum', tps:15, color:'var(--text3)', tagKey:'tps_tag_decentral'},
+  {key:'btc', name:'Bitcoin', tps:12, color:'var(--text3)', tagKey:'tps_tag_robust'}
+];
+let tpsShown=false;
+function tpsBuild(){
+  const box=document.getElementById('tpsBars');box.innerHTML='';
+  TPS_DATA.forEach(d=>{
+    const wrap=document.createElement('div');
+    const row=document.createElement('div');row.className='barrow';
+    const lab=document.createElement('span');lab.style.cssText='width:78px;font-size:12px;color:var(--text2)';lab.textContent=d.name;
+    const track=document.createElement('div');track.className='track';track.style.height='17px';
+    const fill=document.createElement('div');fill.className='fill';fill.id='tpsFill_'+d.key;fill.style.background=d.color;fill.style.width='0%';
+    track.appendChild(fill);
+    const num=document.createElement('span');num.className='num';num.id='tpsNum_'+d.key;num.style.width='52px';num.textContent='?';
+    row.appendChild(lab);row.appendChild(track);row.appendChild(num);
+    const tag=document.createElement('div');tag.style.cssText='margin-left:88px;font-size:11px;color:var(--text3);margin-top:1px';tag.textContent=t(d.tagKey);
+    wrap.appendChild(row);wrap.appendChild(tag);box.appendChild(wrap);
+  });
+}
+function tpsReveal(){
+  if(tpsShown)return;
+  tpsShown=true;
+  const max=Math.max(...TPS_DATA.map(d=>d.tps));
+  TPS_DATA.forEach((d,i)=>{
+    setTimeout(()=>{
+      document.getElementById('tpsFill_'+d.key).style.width=Math.max(2,d.tps/max*100)+'%';
+      // 数字をカウントアップ
+      const numEl=document.getElementById('tpsNum_'+d.key);
+      let v=0;const step=Math.max(1,Math.round(d.tps/25));
+      const iv=setInterval(()=>{v+=step;if(v>=d.tps){v=d.tps;clearInterval(iv);}numEl.textContent=v.toLocaleString();},25);
+    }, i*180);
+  });
+  document.getElementById('tpsHint').textContent=t('tps_hint1');
+  document.getElementById('tpsBtn').disabled=true;
+  document.getElementById('tpsNote').style.display='block';
+}
+function tpsReset(){
+  tpsShown=false;
+  tpsBuild();
+  document.getElementById('tpsBtn').disabled=false;
+  document.getElementById('tpsNote').style.display='none';
+  document.getElementById('tpsHint').textContent=t('tps_hint0');
+}
+tpsBuild();
+
+/* ---------- init ---------- */
+// 静的テキスト（イントロ含む）を最初に確実に描画してから、各シーンの動的初期化を行う。
+// applyLang を先頭に置くことで、後続のシーン初期化で万一エラーが出てもイントロが空にならない。
+applyLang();
+s1Reset();
+acReset();
+feeUpd();
+lfReset();
+gReset();
+slReset();
+document.getElementById('s2hint').textContent=t('s2_hint_init');
+s3Upd(0);
+s4Init();S4.hint=t('s4_hint_init');s4Render();
+s5Reset();
+s6Upd();
+s7Upd();
+s8Reset();
+tpsReset();
+show(0);
+</script>
+</body>
+</html>
